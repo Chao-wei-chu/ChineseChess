@@ -105,8 +105,6 @@ void GUI::displayGameInfo(bool isWhosTurn, Map& map)
 
 bool GUI::showConfirm(const string& info)
 {
-	SMALL_RECT windowSize = { 0, 0, WINDOW_COLS - 1, WINDOW_LINES - 1 };
-
 	/* A COORD struct for specificying the console's screen buffer dimensions */
 	COORD bufferSize = { 120, 34 };
 
@@ -117,9 +115,6 @@ bool GUI::showConfirm(const string& info)
 
 	/* A CHAR_INFO structure containing data about a single character */
 	CHAR_INFO consoleBuffer[WINDOW_COLS * WINDOW_LINES];
-
-	/* Set the window size */
-	SetConsoleWindowInfo(hConsole, TRUE, &windowSize);
 
 	/* Set the screen's buffer size */
 	SetConsoleScreenBufferSize(hConsole, bufferSize);
@@ -181,8 +176,31 @@ void GUI::clearWhatChessYouChose()
 
 void GUI::displayBattleSituation(Map& map)
 {
-	gotoxy(80, 1);
-	cout << "----------戰  況  顯  示----------\n";
+	/* A COORD struct for specificying the console's screen buffer dimensions */
+	COORD bufferSize = { 34, 17 };// col = 34, lines = 16
+
+	/* Setting up different variables for passing to WriteConsoleOutput */
+	COORD characterBufferSize = { 34, 17 };
+	COORD characterPosition = { 0, 0 };
+	SMALL_RECT consoleWriteArea = { 80, 1, (80 + 34) - 1, (1 + 17) - 1 };
+
+	/* A CHAR_INFO structure containing data about a single character */
+	CHAR_INFO consoleBuffer[34 * 17];
+
+	/* Set the screen's buffer size */
+	SetConsoleScreenBufferSize(hConsole, bufferSize);
+
+	for (int y = 0; y < 17; ++y)
+		for (int x = 0; x < 34; ++x) {
+			consoleBuffer[y * 34 + x].Char.AsciiChar = '\0';
+			consoleBuffer[y * 34 + x].Attributes = DEFAULT_COLOR;
+		}
+
+	string title = "----------戰  況  顯  示----------";
+	for (int x = 0; x < 34; ++x) {
+		if (title[x] == '\0')break;
+		consoleBuffer[x].Char.AsciiChar = title.at(x);
+	}
 	const std::string ChineseNum[9] = { "一", "二", "三", "四", "五", "六", "七", "八", "九" };
 	const std::string ArabicNum[9] = { "１", "２", "３", "４", "５", "６", "７", "８", "９" };
 	int counter = 1;
@@ -192,41 +210,48 @@ void GUI::displayBattleSituation(Map& map)
 		counter += map.chessStoragePointer()->size() - BATTLE_SITUATION_LINES;
 		it += map.chessStoragePointer()->size() - BATTLE_SITUATION_LINES;
 	}
+	string line;
+	int printer = 1;
 	for (; it != map.chessStoragePointer()->end(); it++) {
 		straight = false;
-		gotoxy(80, 2 + map.chessStoragePointer()->size() - counter);
-		cout << "  " << counter;
-		((counter % 2) ? showTextColor(" 紅：", WD_RED_BG_BLACK) : showTextColor(" 黑：", WD_GRAY_BG_BLACK));
-		cout << (*it).moved->getName() << " ";
-		(counter % 2) ? (cout << ChineseNum[(8 - (*it).prePos.X)]) : (cout << ArabicNum[((*it).prePos.X)]);
-		if (((counter % 2) ? ((*it).prePos.Y - (*it).Pos.Y) : ((*it).Pos.Y - (*it).prePos.Y)) > 0) {
-			cout << " 進 ";
+		bool color = it->moved->getColor();
+		line += ((counter >= 10) ? " " : "  ") + std::to_string(counter);
+		line += (color ? " 紅：" : " 黑：");
+		line += (*it).moved->getName() + " ";
+		line += (color ? ChineseNum[(8 - (*it).prePos.X)] : ArabicNum[((*it).prePos.X)]);
+		if ((color ? ((*it).prePos.Y - (*it).Pos.Y) : ((*it).Pos.Y - (*it).prePos.Y)) > 0) {
+			line += " 進 ";
 			if (((*it).prePos.X - (*it).Pos.X) == 0) {
-				(counter % 2) ? (cout << ChineseNum[((*it).prePos.Y - (*it).Pos.Y) - 1]) : (cout << ArabicNum[((*it).Pos.Y - (*it).prePos.Y) - 1]);
+				line += (color ? (ChineseNum[((*it).prePos.Y - (*it).Pos.Y) - 1]) : (ArabicNum[((*it).Pos.Y - (*it).prePos.Y) - 1]));
 				straight = true;
 			}
 		}
-		else if ((counter % 2 ? ((*it).Pos.Y - (*it).prePos.Y) : -((*it).prePos.Y - (*it).Pos.Y)) == 0)
-			cout << " 平 ";
+		else if ((color ? ((*it).Pos.Y - (*it).prePos.Y) : -((*it).prePos.Y - (*it).Pos.Y)) == 0)
+			line += " 平 ";
 		else {
-			cout << " 退 ";
+			line += " 退 ";
 			if (((*it).prePos.X - (*it).Pos.X) == 0) {
-				(counter % 2) ? (cout << ChineseNum[((*it).Pos.Y - (*it).prePos.Y) - 1]) : (cout << ArabicNum[((*it).prePos.Y - (*it).Pos.Y) - 1]);
+				line += (color ? (ChineseNum[((*it).Pos.Y - (*it).prePos.Y) - 1]) : (ArabicNum[((*it).prePos.Y - (*it).Pos.Y) - 1]));
 				straight = true;
 			}
 		}
 		if (!straight)
-			(counter % 2) ? (cout << ChineseNum[(8 - (*it).Pos.X)]) : (cout << ArabicNum[((*it).Pos.X)]);
-		cout << std::endl;
+			line += (color ? (ChineseNum[(8 - (*it).Pos.X)]) : (ArabicNum[((*it).Pos.X)]));
+		for (int x = 0; x < 34; ++x) {
+			if (x == (line.size()))break;
+			consoleBuffer[34 * printer + x].Char.AsciiChar = line.at(x);
+		}
+		consoleBuffer[34 * printer + 4].Attributes = (color ? WD_RED_BG_BLACK : WD_GRAY_BG_BLACK);
+		consoleBuffer[34 * printer + 5].Attributes = (color ? WD_RED_BG_BLACK : WD_GRAY_BG_BLACK);
+		printer++;
+		line.clear();
 		counter++;
 	}
-	gotoxy(0, 0);
+	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 }
 
 void GUI::displayExitScreen()
 {
-	/* Window size coordinates, be sure to start index at zero! */
-	SMALL_RECT windowSize = { 0, 0, WINDOW_COLS - 1, WINDOW_LINES - 1 };
 
 	/* A COORD struct for specificying the console's screen buffer dimensions */
 	COORD bufferSize = { WINDOW_COLS, WINDOW_LINES };
@@ -238,9 +263,6 @@ void GUI::displayExitScreen()
 
 	/* A CHAR_INFO structure containing data about a single character */
 	CHAR_INFO consoleBuffer[WINDOW_COLS * WINDOW_LINES];
-
-	/* Set the window size */
-	SetConsoleWindowInfo(hConsole, TRUE, &windowSize);
 
 	/* Set the screen's buffer size */
 	SetConsoleScreenBufferSize(hConsole, bufferSize);
@@ -268,9 +290,7 @@ void GUI::displayExitScreen()
 
 short GUI::mainMenu()
 {
-	//PlaySound("bgaudio.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);  //Play Sound;
-	/* Window size coordinates, be sure to start index at zero! */
-	SMALL_RECT windowSize = { 0, 0, WINDOW_COLS - 1, WINDOW_LINES - 1 };
+	PlaySound("bgaudio.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);  //Play Sound;
 
 	/* A COORD struct for specificying the console's screen buffer dimensions */
 	COORD bufferSize = { WINDOW_COLS, WINDOW_LINES };
@@ -282,9 +302,6 @@ short GUI::mainMenu()
 
 	/* A CHAR_INFO structure containing data about a single character */
 	CHAR_INFO consoleBuffer[WINDOW_COLS * WINDOW_LINES];
-
-	/* Set the window size */
-	SetConsoleWindowInfo(hConsole, TRUE, &windowSize);
 
 	/* Set the screen's buffer size */
 	SetConsoleScreenBufferSize(hConsole, bufferSize);
@@ -308,76 +325,56 @@ short GUI::mainMenu()
 
 	/* Write our character buffer (a single character currently) to the console buffer */
 	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
-	bool reload = true;
-	while (reload){
-		reload = false;
-		WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
-		setVisible(false);
 
-		char* options[OPTIONS_SIZE] = { "開始遊戲", "設定難度", "退出遊戲" };
-		int option = 1;
-		for (int i = 0; i < OPTIONS_SIZE; i++) { //秀出選項
-			gotoxy(MID_X - 4, MID_Y + 2 * (i + 1));
-			cout << options[i];
-		}
-		gotoxy(MID_X - 6, MID_Y + 2);cout << "->";
-		CHAR op = _getch();
-		while (!reload)
-		{
-			setVisible(false);
-			switch (op)
-			{
-			case KB_UP:
-				if (option != 1) {
-					cout << "\b\b  ";
-					option--;
-					gotoxy(MID_X - 6, MID_Y + option * 2); cout << "->";
-				}
-				else {
-					cout << "\b\b  ";
-					option = 3;
-					gotoxy(MID_X - 6, MID_Y + option * 2); cout << "->";
-				}
-				break;
-			case KB_DOWN:
-				if (option != 3) {
-					cout << "\b\b  ";
-					option++;
-					gotoxy(MID_X - 6, MID_Y + option * 2); cout << "->";
-				}
-				else {
-					cout << "\b\b  ";
-					option = 1;
-					gotoxy(MID_X - 6, MID_Y + option * 2); cout << "->";
-				}
-				break;
-			case KB_ENTER:
-				if (option == 1)        //選項: 開始遊戲
-				{
-					//PlaySound(NULL, NULL, NULL);
-					return 1;
-				}
-				else if (option == 2)  //選項: 設定難度
-					return 2;
-				else if (option == 3)   //選項: 離開遊戲
-				{
-					if (showConfirm("     確定離開 ?     "))
-						return 3;
-					reload = true;
-				}
-			default:
-				break;
+	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
+	setVisible(false);
+
+	char* options[OPTIONS_SIZE] = { "開始遊戲", "設定難度", "退出遊戲" };
+	int option = 1;
+	for (int i = 0; i < OPTIONS_SIZE; i++) { //秀出選項
+		gotoxy(MID_X - 4, MID_Y + 2 * (i + 1));
+		cout << options[i];
+	}
+	gotoxy(MID_X - 6, MID_Y + 2);cout << "->";
+	CHAR Input = _getch();
+	while (true) {
+		setVisible(false);
+		switch (Input) {
+		case KB_UP:
+			if (option != 1)
+				option--;
+			else
+				option = 3;
+			break;
+		case KB_DOWN:
+			if (option != 3)
+				option++;
+			else
+				option = 1;
+			break;
+		case KB_ENTER:
+			if (option == 1) {        //選項: 開始遊戲
+				PlaySound(NULL, NULL, NULL);
+				return 1;
 			}
-			op = _getch();
+			else if (option == 2)  //選項: 設定難度
+				return 2;
+			else if (option == 3) {   //選項: 離開遊戲
+				if (showConfirm("     確定離開 ?     "))
+					return 3;
+			}
+			default:
+			break;
 		}
+		cout << "\b\b  ";
+		gotoxy(MID_X - 6, MID_Y + option * 2); cout << "->";
+		Input = _getch();
 	}
 	return 3;
 }
 
 short GUI::MenuInGame()
 {
-	SMALL_RECT windowSize = { 0, 0, WINDOW_COLS - 1, WINDOW_LINES - 1 };
-
 	/* A COORD struct for specificying the console's screen buffer dimensions */
 	COORD bufferSize = { 120, 34 };
 
@@ -388,9 +385,6 @@ short GUI::MenuInGame()
 
 	/* A CHAR_INFO structure containing data about a single character */
 	CHAR_INFO consoleBuffer[WINDOW_COLS * WINDOW_LINES];
-
-	/* Set the window size */
-	SetConsoleWindowInfo(hConsole, TRUE, &windowSize);
 
 	/* Set the screen's buffer size */
 	SetConsoleScreenBufferSize(hConsole, bufferSize);
@@ -407,29 +401,25 @@ short GUI::MenuInGame()
 	cout << "              "; gotoxy(MID_X - 7, MID_Y + 4);
 	cout << "   離開遊戲   "; gotoxy(MID_X - 7, MID_Y + 5);
 	cout << "==============";
-	CHAR op;
+	CHAR Input;
+	gotoxy(MID_X - 4, MID_Y - 2 + option * 2);
 	while (!decided)
 	{
-		gotoxy(MID_X - 4, MID_Y - 2 + option * 2);
 		setVisible(false);
-		op = _getch();
-		switch (op)
+		Input = _getch();
+		switch (Input)
 		{
 		case KB_UP:
 			if (option != 1)
 				option--;
 			else
 				option = 3;
-			cout << "\b\b  ";
-			gotoxy(MID_X - 6, MID_Y - 2 + option * 2); cout << "->";
 			break;
 		case KB_DOWN:
 			if (option != 3)
 				option++;
 			else
 				option = 1;
-			cout << "\b\b  ";
-			gotoxy(MID_X - 6, MID_Y - 2 + option * 2); cout << "->";
 			break;
 		case KB_ENTER:
 			decided = true;
@@ -443,6 +433,8 @@ short GUI::MenuInGame()
 		default:
 			break;
 		}
+		cout << "\b\b  ";
+		gotoxy(MID_X - 6, MID_Y - 2 + option * 2); cout << "->";
 	}
 	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 	return option;
@@ -465,8 +457,6 @@ void GUI::displayPossiblePath(Chess* ch, Map& map)
 
 void GUI::showAlert(const string info, const short time)
 {
-	SMALL_RECT windowSize = { 0, 0, WINDOW_COLS - 1, WINDOW_LINES - 1 };
-
 	/* A COORD struct for specificying the console's screen buffer dimensions */
 	COORD bufferSize = { WINDOW_COLS, WINDOW_LINES };
 
@@ -477,9 +467,6 @@ void GUI::showAlert(const string info, const short time)
 
 	/* A CHAR_INFO structure containing data about a single character */
 	CHAR_INFO consoleBuffer[WINDOW_COLS * WINDOW_LINES];
-
-	/* Set the window size */
-	SetConsoleWindowInfo(hConsole, TRUE, &windowSize);
 
 	/* Set the screen's buffer size */
 	SetConsoleScreenBufferSize(hConsole, bufferSize);

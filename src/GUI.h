@@ -2,6 +2,7 @@
 #define GUI_H
 #include <iostream>
 #include <string>
+#include <iomanip> //setw()
 #include "Map.h"
 using std::cout;
 using std::string;

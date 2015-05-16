@@ -69,7 +69,7 @@ void Game::Interface() //開始介面
 		start();
 		break;
 	case 2:
-		setting();
+		//setting();
 		break;
 	case 3:
 		exitGame();
@@ -157,13 +157,13 @@ void Game::playerControl()
 			break;
 		case KB_ESC:
 			switch (gui.MenuInGame()) {
-			case 1:
-				//resume
+			case 1://resume
 				break;
-			case 2:
-				//restart
+			case 2://restart
+				if (gui.showConfirm("    確定重新開始 ?   "))
+					restart();
 				break;
-			case 3:
+			case 3://exit
 				exitGame();
 			default:
 				break;
@@ -202,4 +202,15 @@ void Game::playerControl()
 		gui.setVisible(true);
 		InputKB = _getch();
 	}
+}
+
+void Game::restart()
+{
+	GameMap.GameRestart();
+	isWhosTurn = true;
+	cursorPos = ComXY(0, 0);
+	makeAccess(GameMap);
+	gui.displayChessboard(GameMap);
+	gui.displayBattleSituation(GameMap);
+	gui.displayGameInfo(isWhosTurn, GameMap);
 }

@@ -39,6 +39,7 @@ public:
 	Game();
 	void Interface();                                 //顯示遊戲介面
 private:
+	void restart();
 	void setting();                                   //進入設定畫面
 	void start();                                     //執行遊戲
 	void exitGame();                                  //離開遊戲
