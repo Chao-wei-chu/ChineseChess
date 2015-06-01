@@ -18,7 +18,6 @@ using std::string;
 #define KB_ESC 27    //鍵盤輸入數值 ESC
 #define CHESSMAP_SIZE_ROW 17      //棋盤ROW    SIZE
 #define CHESSMAP_SIZE_COLUMN 19   //棋盤column SIZE
-#define OPTIONS_SIZE 3            //遊戲介面選項個數
 #define WD_BLACK_BG_WHITE 240     //黑字白色背景
 #define WD_RED_BG_WHITE 252       //紅字白色背景
 #define CHESS_RED 124             //紅方旗子的顏色

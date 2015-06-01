@@ -99,8 +99,10 @@ void GUI::displayGameInfo(bool isWhosTurn, Map& map)
 	else
 		showTextColor("黑色方", WD_GRAY_BG_BLACK);
 	showTextColor("  下棋", WD_OCEANBLUE_BG_BLACK);
-	if (map.checkKingToBeKilled(true) && isWhosTurn == true) { gotoxy(40, 6); showTextColor("紅方  被將軍", WD_RED_BG_BLACK); }
-	if (map.checkKingToBeKilled(false) && isWhosTurn == false){ gotoxy(40, 7); showTextColor("黑方  被將軍", WD_GRAY_BG_BLACK); }
+	gotoxy(40, 6); cout << "\t\t";
+	gotoxy(40, 7); cout << "\t\t";
+	if (isWhosTurn == true && map.checkKingToBeKilled(true)) { gotoxy(40, 6); showTextColor("紅方  被將軍", WD_RED_BG_BLACK); }
+	if (isWhosTurn == false && map.checkKingToBeKilled(false)){ gotoxy(40, 7); showTextColor("黑方  被將軍", WD_GRAY_BG_BLACK); }
 }
 
 bool GUI::showConfirm(const string& info)
@@ -290,7 +292,7 @@ void GUI::displayExitScreen()
 
 short GUI::mainMenu()
 {
-	PlaySound("bgaudio.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);  //Play Sound;
+	//PlaySound("bgaudio.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);  //Play Sound;
 
 	/* A COORD struct for specificying the console's screen buffer dimensions */
 	COORD bufferSize = { WINDOW_COLS, WINDOW_LINES };
@@ -329,9 +331,9 @@ short GUI::mainMenu()
 	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 	setVisible(false);
 
-	char* options[OPTIONS_SIZE] = { "開始遊戲", "設定難度", "退出遊戲" };
+	char* options[4] = { "雙人遊戲","電腦對戰", "設定難度", "退出遊戲" };
 	int option = 1;
-	for (int i = 0; i < OPTIONS_SIZE; i++) { //秀出選項
+	for (int i = 0; i < 4; i++) { //秀出選項
 		gotoxy(MID_X - 4, MID_Y + 2 * (i + 1));
 		cout << options[i];
 	}
@@ -344,10 +346,10 @@ short GUI::mainMenu()
 			if (option != 1)
 				option--;
 			else
-				option = 3;
+				option = 4;
 			break;
 		case KB_DOWN:
-			if (option != 3)
+			if (option != 4)
 				option++;
 			else
 				option = 1;
@@ -357,9 +359,11 @@ short GUI::mainMenu()
 				PlaySound(NULL, NULL, NULL);
 				return 1;
 			}
-			else if (option == 2)  //選項: 設定難度
+			else if (option == 2)
 				return 2;
-			else if (option == 3) {   //選項: 離開遊戲
+			else if (option == 3)  //選項: 設定難度
+				return 2;
+			else if (option == 4) {   //選項: 離開遊戲
 				if (showConfirm("     確定離開 ?     "))
 					return 3;
 			}
@@ -423,9 +427,6 @@ short GUI::MenuInGame()
 			break;
 		case KB_ENTER:
 			decided = true;
-			if (option == 3)
-				if (!showConfirm("     確定離開 ?     "))
-					decided = false;
 			break;
 		case KB_ESC:
 			option = 1;

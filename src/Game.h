@@ -45,7 +45,9 @@ private:
 	void exitGame();                                  //離開遊戲
 	void playerControl();                             //進入玩家控制
 	void makeAccess(Map& imap);                       //將每顆棋子能走的路徑push_back到棋子的vector中
+	void setGamemode(int mode);
 
+	int gamemode;//0=multiplayer, 1=singleplayer
 	COORD cursorPos;
 	Map GameMap;
 	bool isWhosTurn;

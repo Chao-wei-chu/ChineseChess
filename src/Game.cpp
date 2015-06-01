@@ -2,12 +2,15 @@
 #include "Chess.h"
 #include "Map.h"
 #include "Player.h"
+
 using std::cout;
 
 Game::Game()
 {
 	isWhosTurn = true;
 	cursorPos = ComXY(0, 0);
+	gamemode = 1;
+	srand(time(0));
 }
 
 bool operator ==(const COORD& a, const COORD& b)
@@ -64,18 +67,26 @@ void Game::setting()   //設定電腦難易度  可以不要
 }
 void Game::Interface() //開始介面
 {
-	switch (gui.mainMenu()) {
-	case 1:
-		start();
-		break;
-	case 2:
-		//setting();
-		break;
-	case 3:
-		exitGame();
-		break;
-	default:
-		break;
+	while (true)
+	{
+		switch (gui.mainMenu()) {
+		case 1:
+			gamemode = 0;
+			start();
+			break;
+		case 2:
+			gamemode = 1;
+			start();
+			break;
+		case 3:
+			//setting();
+			break;
+		case 4:
+			exitGame();
+			break;
+		default:
+			break;
+		}
 	}
 }
 
@@ -137,21 +148,30 @@ void Game::playerControl()
 				if (!isMoveSuccess)
 					continue;
 
+				GameMap.chessStorageForRestorePointer()->clear();
 				gui.clearWhatChessYouChose();
-				gui.gotoxy(CHESS_BOARD_X + cursorPos.X * 4, CHESS_BOARD_Y + cursorPos.Y * 2 + 1);
-				gui.showTextColor(GameMap.pChess[cursorPos.X][cursorPos.Y]->getName(), (color ? CHESS_RED : CHESS_BLACK));
 				gui.displayChessboard(GameMap);
-				isWhosTurn = !isWhosTurn;         //交換出棋方
+				if (gamemode==0)
+					isWhosTurn = !isWhosTurn;         //交換出棋方
+				else {
+					std::vector<Chess *> temp;
+					for (int x = 0; x < ROW_SIZE; x++)
+						for (int y = 0; y < COLUMN_SIZE; y++) {
+							if (GameMap.pChess[x][y] != NULL && GameMap.pChess[x][y]->getColor() == false && GameMap.pChess[x][y]->access.size() > 0) {
+								temp.push_back(GameMap.pChess[x][y]);
+							}
+						}
+					Chess *ch = temp.at((unsigned int)rand() % temp.size());
+					bPlayer.move(ch->getPos(), ch->access.at(rand()%ch->access.size()), GameMap); //FUCKING IDIOT AI
+					gui.displayChessboard(GameMap);
+				}
+				makeAccess(GameMap);
 				gui.displayGameInfo(isWhosTurn, GameMap);  //顯示換哪方
 
-				makeAccess(GameMap);
-
-				gui.gotoxy(40, 6); cout << "\t\t";
-				gui.gotoxy(40, 7); cout << "\t\t";
 				gui.displayBattleSituation(GameMap);//--------------->戰況
 				
-				if (GameMap.bKingPointer()->isDeath()) { gui.showAlert("      紅方勝利      ", 5000); exit(EXIT_SUCCESS); }
-				if (GameMap.rKingPointer()->isDeath()){ gui.showAlert("      黑方勝利      ", 5000); exit(EXIT_SUCCESS); }
+				if (GameMap.bKingPointer()->isDeath()) { gui.showAlert("      紅方勝利      ", 5000); return; }
+				if (GameMap.rKingPointer()->isDeath()){ gui.showAlert("      黑方勝利      ", 5000); return; }
 
 			}
 			break;
@@ -164,7 +184,8 @@ void Game::playerControl()
 					restart();
 				break;
 			case 3://exit
-				exitGame();
+				if (gui.showConfirm("     確定離開 ?     "))
+					exitGame();
 			default:
 				break;
 			}
@@ -213,4 +234,10 @@ void Game::restart()
 	gui.displayChessboard(GameMap);
 	gui.displayBattleSituation(GameMap);
 	gui.displayGameInfo(isWhosTurn, GameMap);
+}
+
+void Game::setGamemode(int mode)
+{
+	if (mode >= 0 && mode <= 1)
+		gamemode = mode;
 }
