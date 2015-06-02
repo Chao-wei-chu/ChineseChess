@@ -59,6 +59,7 @@ void Game::start()
 	gui.dwSize(25);
 	gui.displayChessboard(GameMap);
 	playerControl();
+	restart();
 }
 
 void Game::setting()   //設定電腦難易度  可以不要
@@ -80,6 +81,7 @@ void Game::Interface() //開始介面
 			break;
 		case 3:
 			//setting();
+			gui.showAlert("       建置中       ",1000);
 			break;
 		case 4:
 			exitGame();
@@ -183,7 +185,11 @@ void Game::playerControl()
 				if (gui.showConfirm("    確定重新開始 ?   "))
 					restart();
 				break;
-			case 3://exit
+			case 3:
+				if (gui.showConfirm("  確定放棄目前戰局 ?  "))
+					return;
+				break;
+			case 4://exit
 				if (gui.showConfirm("     確定離開 ?     "))
 					exitGame();
 			default:

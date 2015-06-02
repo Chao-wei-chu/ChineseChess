@@ -292,52 +292,43 @@ void GUI::displayExitScreen()
 
 short GUI::mainMenu()
 {
+	system("cls");
 	//PlaySound("bgaudio.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);  //Play Sound;
-
+	const int cols = 120;
+	const int lines = 22;
 	/* A COORD struct for specificying the console's screen buffer dimensions */
-	COORD bufferSize = { WINDOW_COLS, WINDOW_LINES };
+	COORD bufferSize = { cols, lines };
 
 	/* Setting up different variables for passing to WriteConsoleOutput */
-	COORD characterBufferSize = { WINDOW_COLS, WINDOW_LINES };
+	COORD characterBufferSize = { cols, lines };
 	COORD characterPosition = { 0, 0 };
-	SMALL_RECT consoleWriteArea = { 0, 0, WINDOW_COLS - 1, WINDOW_LINES - 1 };
+	SMALL_RECT consoleWriteArea = { 0, 4, cols - 1, 4 + lines - 1 };
 
 	/* A CHAR_INFO structure containing data about a single character */
-	CHAR_INFO consoleBuffer[WINDOW_COLS * WINDOW_LINES];
+	CHAR_INFO consoleBuffer[cols * lines];
 
 	/* Set the screen's buffer size */
 	SetConsoleScreenBufferSize(hConsole, bufferSize);
 
-	for (int y = 0; y < WINDOW_LINES; ++y) {
-		for (int x = 0; x < WINDOW_COLS; ++x) {
-			consoleBuffer[x + WINDOW_COLS * y].Char.AsciiChar = ' ';
-			consoleBuffer[x + WINDOW_COLS * y].Attributes = 7;
+	for (int y = 0; y < lines; ++y) {
+		for (int x = 0; x < cols; ++x) {
+			consoleBuffer[x + cols * y].Char.AsciiChar = mainMenuScreen[y][x];
+			consoleBuffer[x + cols * y].Attributes = 3;
 		}
-	}
-
-	for (int y = 2; y < WINDOW_LINES; ++y) {
-		for (int x = 4; x < WINDOW_COLS; ++x) {
-			if (mainMenuScreen[y - 2][x - 4] == '\0')
-				break;
-			consoleBuffer[x + WINDOW_COLS * y].Char.AsciiChar = mainMenuScreen[y - 2][x - 4];
-			consoleBuffer[x + WINDOW_COLS * y].Attributes = 7;
-		}
-		if (y == 14)break;
 	}
 
 	/* Write our character buffer (a single character currently) to the console buffer */
 	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 
-	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 	setVisible(false);
 
 	char* options[4] = { "雙人遊戲","電腦對戰", "設定難度", "退出遊戲" };
 	int option = 1;
 	for (int i = 0; i < 4; i++) { //秀出選項
-		gotoxy(MID_X - 4, MID_Y + 2 * (i + 1));
+		gotoxy(MID_X - 1, MID_Y + 2 * (i + 1)+1);
 		cout << options[i];
 	}
-	gotoxy(MID_X - 6, MID_Y + 2);cout << "->";
+	gotoxy(MID_X - 3, MID_Y + 3);cout << "->";
 	CHAR Input = _getch();
 	while (true) {
 		setVisible(false);
@@ -359,19 +350,20 @@ short GUI::mainMenu()
 				PlaySound(NULL, NULL, NULL);
 				return 1;
 			}
-			else if (option == 2)
+			else if (option == 2)     //選項: 人機對戰
 				return 2;
-			else if (option == 3)  //選項: 設定難度
-				return 2;
+			else if (option == 3)     //選項: 設定難度
+				return 3;
 			else if (option == 4) {   //選項: 離開遊戲
 				if (showConfirm("     確定離開 ?     "))
-					return 3;
+					return 4;
 			}
-			default:
+			break;
+		default:
 			break;
 		}
 		cout << "\b\b  ";
-		gotoxy(MID_X - 6, MID_Y + option * 2); cout << "->";
+		gotoxy(MID_X - 3, MID_Y + option * 2 +1); cout << "->";
 		Input = _getch();
 	}
 	return 3;
@@ -403,7 +395,9 @@ short GUI::MenuInGame()
 	cout << "              "; gotoxy(MID_X - 7, MID_Y + 2);
 	cout << "   重新開始   "; gotoxy(MID_X - 7, MID_Y + 3);
 	cout << "              "; gotoxy(MID_X - 7, MID_Y + 4);
-	cout << "   離開遊戲   "; gotoxy(MID_X - 7, MID_Y + 5);
+	cout << "   回主選單   "; gotoxy(MID_X - 7, MID_Y + 5);
+	cout << "              "; gotoxy(MID_X - 7, MID_Y + 6);
+	cout << "   離開遊戲   "; gotoxy(MID_X - 7, MID_Y + 7);
 	cout << "==============";
 	CHAR Input;
 	gotoxy(MID_X - 4, MID_Y - 2 + option * 2);
@@ -417,10 +411,10 @@ short GUI::MenuInGame()
 			if (option != 1)
 				option--;
 			else
-				option = 3;
+				option = 4;
 			break;
 		case KB_DOWN:
-			if (option != 3)
+			if (option != 4)
 				option++;
 			else
 				option = 1;
