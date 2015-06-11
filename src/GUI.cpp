@@ -9,7 +9,7 @@ static CONSOLE_CURSOR_INFO crInfo;
 GUI::GUI()
 {
 	system("chcp 950");
-	system("mode con: cols=120 lines=34");
+	system("mode con: cols=106 lines=24");
 	SetConsoleTitle("象棋遊戲");
 	GetConsoleScreenBufferInfo(hConsole, &srInfo);
 	GetConsoleCursorInfo(hConsole, &crInfo);
@@ -108,7 +108,7 @@ void GUI::displayGameInfo(bool isWhosTurn, Map& map)
 bool GUI::showConfirm(const string& info)
 {
 	/* A COORD struct for specificying the console's screen buffer dimensions */
-	COORD bufferSize = { 120, 34 };
+	COORD bufferSize = { WINDOW_COLS, WINDOW_LINES };
 
 	/* Setting up different variables for passing to WriteConsoleOutput */
 	COORD characterBufferSize = { WINDOW_COLS, WINDOW_LINES };
@@ -184,7 +184,7 @@ void GUI::displayBattleSituation(Map& map)
 	/* Setting up different variables for passing to WriteConsoleOutput */
 	COORD characterBufferSize = { 34, 17 };
 	COORD characterPosition = { 0, 0 };
-	SMALL_RECT consoleWriteArea = { 80, 1, (80 + 34) - 1, (1 + 17) - 1 };
+	SMALL_RECT consoleWriteArea = { 70, 1, (70 + 34) - 1, (1 + 17) - 1 };
 
 	/* A CHAR_INFO structure containing data about a single character */
 	CHAR_INFO consoleBuffer[34 * 17];
@@ -198,7 +198,7 @@ void GUI::displayBattleSituation(Map& map)
 			consoleBuffer[y * 34 + x].Attributes = DEFAULT_COLOR;
 		}
 
-	string title = "----------戰  況  顯  示----------";
+	string title = "------戰  況  顯  示------";
 	for (int x = 0; x < 34; ++x) {
 		if (title[x] == '\0')break;
 		consoleBuffer[x].Char.AsciiChar = title.at(x);
@@ -293,80 +293,93 @@ void GUI::displayExitScreen()
 short GUI::mainMenu()
 {
 	system("cls");
-	//PlaySound("bgaudio.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);  //Play Sound;
-	const int cols = 120;
-	const int lines = 22;
-	/* A COORD struct for specificying the console's screen buffer dimensions */
-	COORD bufferSize = { cols, lines };
-
-	/* Setting up different variables for passing to WriteConsoleOutput */
-	COORD characterBufferSize = { cols, lines };
-	COORD characterPosition = { 0, 0 };
-	SMALL_RECT consoleWriteArea = { 0, 4, cols - 1, 4 + lines - 1 };
-
-	/* A CHAR_INFO structure containing data about a single character */
-	CHAR_INFO consoleBuffer[cols * lines];
-
-	/* Set the screen's buffer size */
-	SetConsoleScreenBufferSize(hConsole, bufferSize);
-
-	for (int y = 0; y < lines; ++y) {
-		for (int x = 0; x < cols; ++x) {
-			consoleBuffer[x + cols * y].Char.AsciiChar = mainMenuScreen[y][x];
-			consoleBuffer[x + cols * y].Attributes = 3;
+	class printMenu {
+	private:
+		COORD bufferSize;
+		COORD characterBufferSize;
+		COORD characterPosition;
+		SMALL_RECT consoleWriteArea;
+		//CHAR_INFO *consoleBuffer;
+		CHAR_INFO *consoleBuffer;
+	public:
+		printMenu() {
+			consoleBuffer = new CHAR_INFO[WINDOW_COLS * WINDOW_LINES];
+			bufferSize = { WINDOW_COLS, WINDOW_LINES };
+			characterBufferSize = { WINDOW_COLS, WINDOW_LINES };
+			characterPosition = { 0, 0 };
+			consoleWriteArea = { 0, 0, WINDOW_COLS - 1, WINDOW_LINES - 1 };
 		}
-	}
-
-	/* Write our character buffer (a single character currently) to the console buffer */
-	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
-
-	setVisible(false);
-
-	char* options[4] = { "雙人遊戲","電腦對戰", "設定難度", "退出遊戲" };
-	int option = 1;
-	for (int i = 0; i < 4; i++) { //秀出選項
-		gotoxy(MID_X - 1, MID_Y + 2 * (i + 1)+1);
-		cout << options[i];
-	}
-	gotoxy(MID_X - 3, MID_Y + 3);cout << "->";
-	CHAR Input = _getch();
-	while (true) {
+		void print(int color,int option) {
+			char* options[5] = { "雙人遊戲", "電腦對戰", "設定難度", "　關於　", "退出遊戲" };
+			SetConsoleScreenBufferSize(hConsole, bufferSize);
+			for (int y = 0; y < WINDOW_LINES; ++y) {
+				for (int x = 0; x < WINDOW_COLS; ++x) {
+					consoleBuffer[x + WINDOW_COLS * y].Char.AsciiChar = mainMenuScreen[y][x];
+					consoleBuffer[x + WINDOW_COLS * y].Attributes = (((y / 2 + x + color) / 20) % 6 + 1);
+			}}
+			for (int y = 13; y <= 21; ++y) {
+				if (y % 2 == 0)continue;
+				for (int x = 54; x <= 61; ++x) {
+					consoleBuffer[x + WINDOW_COLS * y].Char.AsciiChar = options[(y - 13) / 2][x - 54];
+					consoleBuffer[x + WINDOW_COLS * y].Attributes = 7;
+					if (((y - 13) / 2) + 1 == option)
+						consoleBuffer[x + WINDOW_COLS * y].Attributes = 112;
+				}
+			}
+			WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
+		}
+		~printMenu() {
+			delete[] consoleBuffer;
+		}
+	};
+	printMenu image;
+	bool stop = false;
+	static int option = 1;
+	int const optionsNum = 5;
+	char* options[optionsNum] = { "雙人遊戲", "電腦對戰", "設定難度", "　關於　", "退出遊戲" };
+	std::thread t1([&]() {
+		int color = 1, i = 0;
+		while (!stop) {
+			image.print(color, option);
+			color++;
+			if (color > 10000)
+				color = 0;
+			Sleep(150);
+		}
+	});
+	std::thread t2([&]() {
 		setVisible(false);
-		switch (Input) {
-		case KB_UP:
-			if (option != 1)
-				option--;
-			else
-				option = 4;
-			break;
-		case KB_DOWN:
-			if (option != 4)
-				option++;
-			else
-				option = 1;
-			break;
-		case KB_ENTER:
-			if (option == 1) {        //選項: 開始遊戲
-				PlaySound(NULL, NULL, NULL);
-				return 1;
+		CHAR Input;
+		bool end = false;
+		while (!end) {
+			Input = _getch();
+			setVisible(false);
+			switch (Input) {
+			case KB_UP:
+				if (option != 1)
+					option--;
+				else
+					option = optionsNum;
+				break;
+			case KB_DOWN:
+				if (option != optionsNum)
+					option++;
+				else
+					option = 1;
+				break;
+			case KB_ENTER:
+				end = true;
+				stop = true;
+				break;
+			default:
+				break;
 			}
-			else if (option == 2)     //選項: 人機對戰
-				return 2;
-			else if (option == 3)     //選項: 設定難度
-				return 3;
-			else if (option == 4) {   //選項: 離開遊戲
-				if (showConfirm("     確定離開 ?     "))
-					return 4;
-			}
-			break;
-		default:
-			break;
 		}
-		cout << "\b\b  ";
-		gotoxy(MID_X - 3, MID_Y + option * 2 +1); cout << "->";
-		Input = _getch();
-	}
-	return 3;
+	});
+	t1.join();
+	t2.join();
+	PlaySound(NULL, NULL, NULL);
+	return option;
 }
 
 short GUI::MenuInGame()

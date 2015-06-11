@@ -81,9 +81,12 @@ void Game::Interface() //開始介面
 			break;
 		case 3:
 			//setting();
-			gui.showAlert("       建置中       ",1000);
+			gui.showAlert("       建置中       ", 1000);
 			break;
 		case 4:
+			gui.showAlert("       建置中       ", 1000);
+			break;
+		case 5:
 			exitGame();
 			break;
 		default:
