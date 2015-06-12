@@ -10,7 +10,6 @@ Game::Game()
 	isWhosTurn = true;
 	cursorPos = ComXY(0, 0);
 	gamemode = 1;
-	srand(time(0));
 }
 
 bool operator ==(const COORD& a, const COORD& b)
@@ -57,9 +56,9 @@ void Game::start()
 
 	gui.setVisible(true);
 	gui.dwSize(25);
-	gui.displayChessboard(GameMap);
+	gui.displayGameScreen(GameMap, isWhosTurn);
 	playerControl();
-	restart();
+	reset();
 }
 
 void Game::setting()   //設定電腦難易度  可以不要
@@ -81,10 +80,10 @@ void Game::Interface() //開始介面
 			break;
 		case 3:
 			//setting();
-			gui.showAlert("        建置中       ", 1000);
+			gui.showAlert("        建置中        ", 1000);
 			break;
 		case 4:
-			gui.showAlert("        建置中       ", 1000);
+			gui.showAlert("        建置中        ", 1000);
 			break;
 		case 5:
 			exitGame();
@@ -110,12 +109,10 @@ void Game::playerControl()
 	isWhosTurn = true;      //Red 先開始
 	bool isMoveSuccess = false;
 	bool reChoose = false;
-	gui.displayGameInfo(isWhosTurn, GameMap);
 	makeAccess(GameMap);
 	gui.gotoxy(CHESS_BOARD_X + cursorPos.X * 4, CHESS_BOARD_Y + cursorPos.Y * 2 + 1);
-	gui.displayGameScreen(GameMap, isWhosTurn, "");
+	gui.displayGameScreen(GameMap, isWhosTurn);
 	CHAR InputKB = _getch();
-	
 	while (true)
 	{
 		isMoveSuccess = false;
@@ -157,7 +154,7 @@ void Game::playerControl()
 				GameMap.chessStorageForRestorePointer()->clear();
 				gui.displayChessboard(GameMap);
 				gui.displayGameInfo(isWhosTurn, GameMap);
-				if (gamemode==0)
+				if (gamemode == 0)
 					isWhosTurn = !isWhosTurn;         //交換出棋方
 				else {
 					std::vector<Chess *> temp;
@@ -170,16 +167,12 @@ void Game::playerControl()
 					Chess *ch = temp.at((unsigned int)rand() % temp.size());
 					bPlayer.move(ch->getPos(), ch->access.at(rand()%ch->access.size()), GameMap); //FUCKING IDIOT AI
 					gui.displayChessboard(GameMap);
-					gui.displayGameInfo(isWhosTurn, GameMap);
 				}
 				makeAccess(GameMap);
-				gui.displayGameInfo(isWhosTurn, GameMap);  //顯示換哪方
-
-				gui.displayBattleSituation(GameMap);//--------------->戰況
-				
-				if (GameMap.bKingPointer()->isDeath()) { gui.showAlert("       紅方勝利      ", 5000); return; }
-				if (GameMap.rKingPointer()->isDeath()){ gui.showAlert("       黑方勝利      ", 5000); return; }
-
+				gui.displayBattleSituation(GameMap);
+				gui.displayGameInfo(isWhosTurn, GameMap);
+				if (GameMap.bKingPointer()->isDeath()) { gui.showAlert("       紅方勝利       ", 5000); return; }
+				if (GameMap.rKingPointer()->isDeath()){ gui.showAlert("       黑方勝利       ", 5000); return; }
 			}
 			break;
 		case KB_ESC:
@@ -187,46 +180,44 @@ void Game::playerControl()
 			case 1://resume
 				break;
 			case 2://restart
-				if (gui.showConfirm("    確定重新開始 ?   ")) //22 chars
-					restart();
+				if (gui.showConfirm("    確定重新開始 ?    ")) { //22 chars
+					reset();
+					gui.displayGameScreen(GameMap, isWhosTurn);
+				}
 				break;
-			case 3:
-				if (gui.showConfirm("  確定放棄目前戰局 ? "))
+			case 3://back to main menu
+				if (gui.showConfirm("  確定放棄目前戰局 ?  "))
 					return;
 				break;
 			case 4://exit
-				if (gui.showConfirm("      確定離開 ?     "))
+				if (gui.showConfirm("      確定離開 ?      "))
 					exitGame();
 			default:
 				break;
 			}
 			break;
 		case KB_44:   //悔棋
-			if (gui.showConfirm("      確定悔棋 ?     "))
+			if (gui.showConfirm("      確定悔棋 ?      "))
 			{
 				if (GameMap.regret())
 				{
 					makeAccess(GameMap);
-					gui.displayChessboard(GameMap);
-					gui.displayGameInfo(isWhosTurn, GameMap);
-					gui.displayBattleSituation(GameMap);
+					gui.displayGameScreen(GameMap, isWhosTurn);
 				}
 				else
-					gui.showAlert(" 沒有步數可以悔棋了! ", 2500);
+					gui.showAlert(" 沒有步數可以悔棋了 ! ", 2500);
 			}
 			break;
 		case KB_46:   //還原
-			if (gui.showConfirm("      確定還原 ?     "))
+			if (gui.showConfirm("      確定還原 ?      "))
 			{
 				if (GameMap.restore())
 				{
 					makeAccess(GameMap);
-					gui.displayChessboard(GameMap);
-					gui.displayGameInfo(isWhosTurn, GameMap);
-					gui.displayBattleSituation(GameMap);
+					gui.displayGameScreen(GameMap, isWhosTurn);
 				}
 				else
-					gui.showAlert(" 沒有步數可以還原了 !", 2500);
+					gui.showAlert(" 沒有步數可以還原了 ! ", 2500);
 			}
 			break;
 		default:
@@ -238,15 +229,12 @@ void Game::playerControl()
 	}
 }
 
-void Game::restart()
+void Game::reset()
 {
-	GameMap.GameRestart();
+	GameMap.reset();
 	isWhosTurn = true;
 	cursorPos = ComXY(0, 0);
 	makeAccess(GameMap);
-	gui.displayChessboard(GameMap);
-	gui.displayBattleSituation(GameMap);
-	gui.displayGameInfo(isWhosTurn, GameMap);
 }
 
 void Game::setGamemode(int mode)

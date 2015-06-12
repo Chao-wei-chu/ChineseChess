@@ -18,10 +18,10 @@ class Map
 public:
 	Map();
 	~Map();
-	short checkKingToBeKilled(bool color);
+	short checkKingToBeKilled(bool color) const;
 	bool regret();
 	bool restore();
-	void GameRestart();
+	void reset();
 	Chess* bKingPointer() const;
 	Chess* rKingPointer() const;
 	const std::vector<chessStorage>* chessStoragePointerConst() const;

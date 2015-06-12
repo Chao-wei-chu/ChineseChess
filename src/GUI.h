@@ -164,16 +164,14 @@ public:
 	void setVisible(bool);
 	void dwSize(int);
 	//--------------------
-	void displayGameScreen(const Map& map, bool isWhosTurn, const string chessYouChoose);
+	void displayGameScreen(const Map& map, bool isWhosTurn, const Chess *ch = nullptr);
 	void displayChessboard(const Map&);
-	void displayGameInfo(bool, Map&, const Chess *ch = nullptr);
+	void displayGameInfo(bool,const Map&, const Chess *ch = nullptr);
 	void displayBattleSituation(const Map& map);
-	void displayWhatChessYouChose(const Chess&);
 	//--------------------
 	void displayPossiblePath(Chess* ch, Map& map);
-	void clearWhatChessYouChose();
-	bool showConfirm(const string&);   //<==請填剛好21半形字元
-	void showAlert(const string, const short);
+	bool showConfirm(const string&);          //<==請填剛好22半形字元
+	void showAlert(const string, const short);//<==請填剛好22半形字元
 	void displayExitScreen();
 	void gotoxy(COORD);
 	void gotoxy(short, short);

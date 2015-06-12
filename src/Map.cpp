@@ -101,7 +101,7 @@ Map::~Map()
 }
 
 
-short Map::checkKingToBeKilled(bool color)
+short Map::checkKingToBeKilled(bool color) const
 {
 	if ((color ? rKing : bKing)->enemy.size() != 0)
 		return true;
@@ -148,7 +148,7 @@ bool Map::restore()
 	return false;
 }
 
-void Map::GameRestart() {
+void Map::reset() {
 	delete bKing;
 	delete rKing;
 	delete bAdviser1;

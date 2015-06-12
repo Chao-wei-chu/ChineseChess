@@ -88,7 +88,7 @@ void GUI::displayChessboard(const Map& map)
 	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 }
 
-void GUI::displayGameInfo(bool isWhosTurn, Map& map, const Chess *ch)
+void GUI::displayGameInfo(bool isWhosTurn, const Map& map, const Chess *ch)
 {
 	/*
 	if (isWhosTurn == true && map.checkKingToBeKilled(true)) { gotoxy(40, 6); showTextColor("¬õ¤è  ³Q±N­x", WD_RED_BG_BLACK); }
@@ -167,27 +167,29 @@ bool GUI::showConfirm(const string& info)
 	ReadConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 	setVisible(false);
 	bool point = false;
+	setColor(12);
 	gotoxy(MID_X - 10, MID_Y - 3);
-	showTextColor("=========================", 12); gotoxy(MID_X - 10, MID_Y - 2);
-	showTextColor("=", 12); cout << "                       "; showTextColor("=", 12); gotoxy(MID_X - 10, MID_Y - 1);
-	showTextColor("=", 12); cout << " " << info << " "; gotoxy(MID_X - 10 + 24, MID_Y - 1); showTextColor("=", 12); gotoxy(MID_X - 10, MID_Y);
-	showTextColor("=", 12); cout << "                       "; showTextColor("=", 12); gotoxy(MID_X - 10, MID_Y + 1);
-	showTextColor("=", 12); cout << "          YES          "; showTextColor("=", 12); gotoxy(MID_X - 10, MID_Y + 2);
-	showTextColor("=", 12); cout << "       -> NO           "; showTextColor("=", 12); gotoxy(MID_X - 10, MID_Y + 3);
-	showTextColor("=", 12); cout << "                       "; showTextColor("=", 12); gotoxy(MID_X - 10, MID_Y + 4);
-	showTextColor("=========================", 12);
+	cout << "ùÝùùùùùùùùùùùùùùùùùùùùùùùß"; gotoxy(MID_X - 10, MID_Y - 2);
+	cout << "ùø                      ùø"; gotoxy(MID_X - 10, MID_Y - 1);
+	cout << "ùø                      ùø"; gotoxy(MID_X - 10, MID_Y);
+	cout << "ùø"; showTextColor(info, DEFAULT_COLOR); setColor(12); cout << "ùø"; gotoxy(MID_X - 10, MID_Y + 1);
+	cout << "ùø                      ùø"; gotoxy(MID_X - 10, MID_Y + 2);
+	cout << "ùø     ¬O        §_     ùø"; gotoxy(MID_X - 10, MID_Y + 3);
+	cout << "ùø                      ùø"; gotoxy(MID_X - 10, MID_Y + 4);
+	cout << "ùãùùùùùùùùùùùùùùùùùùùùùùùå";
 	char KB;
-	gotoxy(MID_X, MID_Y + 2);
 	while (true)
 	{
+		gotoxy(MID_X - 4, MID_Y + 2); 
+		showTextColor("¬O", !point ? 15 : 240);
+		gotoxy(MID_X + 6, MID_Y + 2);
+		showTextColor("§_", point ? 15 : 240);
 		KB = _getch();
 		switch (KB)
 		{
-		case KB_UP:
-		case KB_DOWN:
+		case KB_LEFT:
+		case KB_RIGHT:
 			point = !point;
-			cout << "\b\b  ";
-			gotoxy(MID_X - 2, MID_Y + 2 - point); cout << "->";
 			break;
 		case KB_ENTER:
 			WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
@@ -199,23 +201,6 @@ bool GUI::showConfirm(const string& info)
 	}
 	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 	return point;
-}
-
-void GUI::displayWhatChessYouChose(const Chess& youChose)
-{
-	/*gotoxy(40, 4);
-	showTextColor("±z¿ï¾Ü¤F  ", WD_OCEANBLUE_BG_BLACK);
-	if (youChose.getColor() == true)
-		showTextColor(youChose.getName(), WD_RED_BG_BLACK);
-	else
-		showTextColor(youChose.getName(), WD_GRAY_BG_BLACK);
-	gotoxy(CHESS_BOARD_X + youChose.getPos().X * 4 + 1, CHESS_BOARD_Y + youChose.getPos().Y * 2 + 1);*/
-}
-
-void GUI::clearWhatChessYouChose()
-{
-	gotoxy(40, 4);
-	cout << "\t\t";
 }
 
 void GUI::displayBattleSituation(const Map& map)
@@ -241,7 +226,7 @@ void GUI::displayBattleSituation(const Map& map)
 			}
 		}
 
-	string title = "ùÝùùùù¾Ô  ªp  Åã  ¥Üùùùùùß";
+	string title = "ùÝùù  ¾Ô  ªp  Åã  ¥Ü  ùùùß";
 	string bottom = "ùãùùùùùùùùùùùùùùùùùùùùùùùå";
 	for (int x = 0; x < cols; ++x) {
 		if (title[x] == '\0')break;
@@ -443,21 +428,30 @@ short GUI::MenuInGame()
 	SetConsoleScreenBufferSize(hConsole, bufferSize);
 	ReadConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 	bool decided = false;
+	string options[4] = { "Ä~Äò¹CÀ¸", "­«·s¶}©l", "¦^¥D¿ï³æ", "Â÷¶}¹CÀ¸" };
 	short option = 1;
+	setColor(9);
 	gotoxy(MID_X - 6, MID_Y - 5);
-	cout << "¢z¢w¢w¢w¢w¢w¢w¢w¢{"; gotoxy(MID_X - 6, MID_Y - 4);
-	cout << "¢x   Ä~Äò¹CÀ¸   ¢x"; gotoxy(MID_X - 6, MID_Y - 3);
-	cout << "¢x              ¢x"; gotoxy(MID_X - 6, MID_Y - 2);
-	cout << "¢x  ­«·s¶}©l    ¢x"; gotoxy(MID_X - 6, MID_Y - 1);
-	cout << "¢x              ¢x"; gotoxy(MID_X - 6, MID_Y);
-	cout << "¢x  ¦^¥D¿ï³æ    ¢x"; gotoxy(MID_X - 6, MID_Y + 1);
-	cout << "¢x              ¢x"; gotoxy(MID_X - 6, MID_Y + 2);
-	cout << "¢x  Â÷¶}¹CÀ¸    ¢x"; gotoxy(MID_X - 6, MID_Y + 3);
-	cout << "¢¢¢w¢w¢w¢w¢w¢w¢w¢£";
+	cout << "ùÝùùùùùùùùùùùùùùùß"; gotoxy(MID_X - 6, MID_Y - 4);
+	cout << "ùø              ùø"; gotoxy(MID_X - 6, MID_Y - 3);
+	cout << "ùàùùùùùùùùùùùùùùùâ"; gotoxy(MID_X - 6, MID_Y - 2);
+	cout << "ùø              ùø"; gotoxy(MID_X - 6, MID_Y - 1);
+	cout << "ùàùùùùùùùùùùùùùùùâ"; gotoxy(MID_X - 6, MID_Y);
+	cout << "ùø              ùø"; gotoxy(MID_X - 6, MID_Y + 1);
+	cout << "ùàùùùùùùùùùùùùùùùâ"; gotoxy(MID_X - 6, MID_Y + 2);
+	cout << "ùø              ùø"; gotoxy(MID_X - 6, MID_Y + 3);
+	cout << "ùãùùùùùùùùùùùùùùùå";
+	setColor(DEFAULT_COLOR);
 	CHAR Input;
-	gotoxy(MID_X - 1, MID_Y - 6 + option * 2);
 	while (!decided)
 	{
+		for (int i = 0; i < 4; i++) {
+			gotoxy(MID_X - 1, MID_Y - 4 + 2 * i);
+			if (option == (i + 1))
+				showTextColor(options[i], 240);
+			else
+				cout << options[i];
+		}
 		setVisible(false);
 		Input = _getch();
 		switch (Input)
@@ -483,8 +477,6 @@ short GUI::MenuInGame()
 		default:
 			break;
 		}
-		cout << "\b\b  ";
-		gotoxy(MID_X - 3, MID_Y - 6 + option * 2); cout << "->";
 	}
 	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 	return option;
@@ -524,22 +516,23 @@ void GUI::showAlert(const string info, const short time)
 	/* Write our character buffer (a single character currently) to the console buffer */
 	ReadConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 	setVisible(false);
-	bool point = false;
+	setColor(12);
 	gotoxy(MID_X - 10, MID_Y - 3);
-	showTextColor("=========================", 12); gotoxy(MID_X - 10, MID_Y - 2);
-	showTextColor("=", 12); cout << "                       "; showTextColor("=", 12); gotoxy(MID_X - 10, MID_Y - 1);
-	showTextColor("=", 12); cout << "                       "; showTextColor("=", 12); gotoxy(MID_X - 10, MID_Y);
-	showTextColor("=", 12); cout << " " << info << " "; gotoxy(MID_X - 10 + 24, MID_Y); showTextColor("=", 12); gotoxy(MID_X - 10, MID_Y + 1);
-	showTextColor("=", 12); cout << "                       "; showTextColor("=", 12); gotoxy(MID_X - 10, MID_Y + 2);
-	showTextColor("=", 12); cout << "                       "; showTextColor("=", 12); gotoxy(MID_X - 10, MID_Y + 3);
-	showTextColor("=", 12); cout << "                       "; showTextColor("=", 12); gotoxy(MID_X - 10, MID_Y + 4);
-	showTextColor("=========================", 12);
+	cout << "ùÝùùùùùùùùùùùùùùùùùùùùùùùß"; gotoxy(MID_X - 10, MID_Y - 2);
+	cout << "ùø                      ùø"; gotoxy(MID_X - 10, MID_Y - 1);
+	cout << "ùø                      ùø"; gotoxy(MID_X - 10, MID_Y);
+	cout << "ùø"; showTextColor(info, DEFAULT_COLOR); setColor(12); cout << "ùø"; gotoxy(MID_X - 10, MID_Y + 1);
+	cout << "ùø                      ùø"; gotoxy(MID_X - 10, MID_Y + 2);
+	cout << "ùø                      ùø"; gotoxy(MID_X - 10, MID_Y + 3);
+	cout << "ùø                      ùø"; gotoxy(MID_X - 10, MID_Y + 4);
+	cout << "ùãùùùùùùùùùùùùùùùùùùùùùùùå";
+	setColor(DEFAULT_COLOR);
 	Sleep(time);
 	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 	setVisible(true);
 }
 
-void GUI::displayGameScreen(const Map& map, bool isWhosTurn, const string chessYouChoose)
+void GUI::displayGameScreen(const Map& map, bool isWhosTurn, const Chess* ch)
 {
 	COORD bufferSize{ WINDOW_COLS, WINDOW_LINES };
 	COORD characterBufferSize{ WINDOW_COLS, WINDOW_LINES };
@@ -556,4 +549,5 @@ void GUI::displayGameScreen(const Map& map, bool isWhosTurn, const string chessY
 	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 	displayChessboard(map);
 	displayBattleSituation(map);
+	displayGameInfo(isWhosTurn, map, ch);
 }
