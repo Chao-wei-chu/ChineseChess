@@ -17,6 +17,14 @@ std::vector<chessStorage>* Map::chessStorageForRestorePointer()
 {
 	return &storageForRestore;
 }
+const std::vector<chessStorage>* Map::chessStoragePointerConst() const
+{
+	return &storage;
+}
+const std::vector<chessStorage>* Map::chessStorageForRestorePointerConst() const
+{
+	return &storageForRestore;
+}
 Map::Map()
 {
 	for (int i = 0; i < ROW_SIZE; i++)

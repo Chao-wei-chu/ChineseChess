@@ -81,10 +81,10 @@ void Game::Interface() //開始介面
 			break;
 		case 3:
 			//setting();
-			gui.showAlert("       建置中       ", 1000);
+			gui.showAlert("        建置中       ", 1000);
 			break;
 		case 4:
-			gui.showAlert("       建置中       ", 1000);
+			gui.showAlert("        建置中       ", 1000);
 			break;
 		case 5:
 			exitGame();
@@ -99,7 +99,7 @@ void Game::exitGame()
 {
 	system("cls");
 	gui.displayExitScreen();
-	Sleep(2000);	                //延遲2秒
+	Sleep(200);//Delay 200ms
 	exit(EXIT_SUCCESS);
 }
 
@@ -113,7 +113,9 @@ void Game::playerControl()
 	gui.displayGameInfo(isWhosTurn, GameMap);
 	makeAccess(GameMap);
 	gui.gotoxy(CHESS_BOARD_X + cursorPos.X * 4, CHESS_BOARD_Y + cursorPos.Y * 2 + 1);
+	gui.displayGameScreen(GameMap, isWhosTurn, "");
 	CHAR InputKB = _getch();
+	
 	while (true)
 	{
 		isMoveSuccess = false;
@@ -141,21 +143,20 @@ void Game::playerControl()
 			{
 				bool color = GameMap.pChess[cursorPos.X][cursorPos.Y]->getColor();
 				if (color != isWhosTurn)break;
-				gui.displayWhatChessYouChose(*GameMap.pChess[cursorPos.X][cursorPos.Y]);    //顯示你選擇的棋子
+				gui.displayGameInfo(isWhosTurn, GameMap, GameMap.pChess[cursorPos.X][cursorPos.Y]);
 				gui.displayPossiblePath(GameMap.pChess[cursorPos.X][cursorPos.Y], GameMap); //顯示可以走的位置
 				gui.gotoxy(CHESS_BOARD_X + cursorPos.X * 4, CHESS_BOARD_Y + cursorPos.Y * 2 + 1);
 				cursorPos = (color ? rPlayer : bPlayer).chooseMovePos(ComXY(cursorPos.X, cursorPos.Y), GameMap, isMoveSuccess, reChoose, gui);
 				if (reChoose) {
 					gui.displayChessboard(GameMap);
 					gui.displayGameInfo(isWhosTurn, GameMap);
-					gui.clearWhatChessYouChose();
 				}
 				if (!isMoveSuccess)
 					continue;
 
 				GameMap.chessStorageForRestorePointer()->clear();
-				gui.clearWhatChessYouChose();
 				gui.displayChessboard(GameMap);
+				gui.displayGameInfo(isWhosTurn, GameMap);
 				if (gamemode==0)
 					isWhosTurn = !isWhosTurn;         //交換出棋方
 				else {
@@ -169,14 +170,15 @@ void Game::playerControl()
 					Chess *ch = temp.at((unsigned int)rand() % temp.size());
 					bPlayer.move(ch->getPos(), ch->access.at(rand()%ch->access.size()), GameMap); //FUCKING IDIOT AI
 					gui.displayChessboard(GameMap);
+					gui.displayGameInfo(isWhosTurn, GameMap);
 				}
 				makeAccess(GameMap);
 				gui.displayGameInfo(isWhosTurn, GameMap);  //顯示換哪方
 
 				gui.displayBattleSituation(GameMap);//--------------->戰況
 				
-				if (GameMap.bKingPointer()->isDeath()) { gui.showAlert("      紅方勝利      ", 5000); return; }
-				if (GameMap.rKingPointer()->isDeath()){ gui.showAlert("      黑方勝利      ", 5000); return; }
+				if (GameMap.bKingPointer()->isDeath()) { gui.showAlert("       紅方勝利      ", 5000); return; }
+				if (GameMap.rKingPointer()->isDeath()){ gui.showAlert("       黑方勝利      ", 5000); return; }
 
 			}
 			break;
@@ -185,44 +187,46 @@ void Game::playerControl()
 			case 1://resume
 				break;
 			case 2://restart
-				if (gui.showConfirm("    確定重新開始 ?   "))
+				if (gui.showConfirm("    確定重新開始 ?   ")) //22 chars
 					restart();
 				break;
 			case 3:
-				if (gui.showConfirm("  確定放棄目前戰局 ?  "))
+				if (gui.showConfirm("  確定放棄目前戰局 ? "))
 					return;
 				break;
 			case 4://exit
-				if (gui.showConfirm("     確定離開 ?     "))
+				if (gui.showConfirm("      確定離開 ?     "))
 					exitGame();
 			default:
 				break;
 			}
 			break;
 		case KB_44:   //悔棋
-			if (gui.showConfirm("     確定悔棋 ?     "))
+			if (gui.showConfirm("      確定悔棋 ?     "))
 			{
 				if (GameMap.regret())
 				{
 					makeAccess(GameMap);
 					gui.displayChessboard(GameMap);
+					gui.displayGameInfo(isWhosTurn, GameMap);
 					gui.displayBattleSituation(GameMap);
 				}
 				else
-					gui.showAlert("沒有步數可以悔棋了 !", 2500);
+					gui.showAlert(" 沒有步數可以悔棋了! ", 2500);
 			}
 			break;
 		case KB_46:   //還原
-			if (gui.showConfirm("     確定還原 ?     "))
+			if (gui.showConfirm("      確定還原 ?     "))
 			{
 				if (GameMap.restore())
 				{
 					makeAccess(GameMap);
 					gui.displayChessboard(GameMap);
+					gui.displayGameInfo(isWhosTurn, GameMap);
 					gui.displayBattleSituation(GameMap);
 				}
 				else
-					gui.showAlert("沒有步數可以還原了 !", 2500);
+					gui.showAlert(" 沒有步數可以還原了 !", 2500);
 			}
 			break;
 		default:

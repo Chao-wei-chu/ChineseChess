@@ -24,6 +24,8 @@ public:
 	void GameRestart();
 	Chess* bKingPointer() const;
 	Chess* rKingPointer() const;
+	const std::vector<chessStorage>* chessStoragePointerConst() const;
+	const std::vector<chessStorage>* chessStorageForRestorePointerConst() const;
 	std::vector<chessStorage>* chessStoragePointer();
 	std::vector<chessStorage>* chessStorageForRestorePointer();
 	

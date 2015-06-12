@@ -9,7 +9,7 @@ static CONSOLE_CURSOR_INFO crInfo;
 GUI::GUI()
 {
 	system("chcp 950");
-	system("mode con: cols=106 lines=24");
+	system("mode con: cols=104 lines=24");
 	SetConsoleTitle("象棋遊戲");
 	GetConsoleScreenBufferInfo(hConsole, &srInfo);
 	GetConsoleCursorInfo(hConsole, &crInfo);
@@ -88,21 +88,63 @@ void GUI::displayChessboard(const Map& map)
 	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 }
 
-void GUI::displayGameInfo(bool isWhosTurn, Map& map)
+void GUI::displayGameInfo(bool isWhosTurn, Map& map, const Chess *ch)
 {
-	gotoxy(40, 0);
-	cout << "選單 Esc    悔棋 <    還原 > ";
-	gotoxy(40, 2);
-	showTextColor("現在輪到  ", WD_OCEANBLUE_BG_BLACK);
-	if (isWhosTurn)
-		showTextColor("紅色方", WD_RED_BG_BLACK);
-	else
-		showTextColor("黑色方", WD_GRAY_BG_BLACK);
-	showTextColor("  下棋", WD_OCEANBLUE_BG_BLACK);
-	gotoxy(40, 6); cout << "\t\t";
-	gotoxy(40, 7); cout << "\t\t";
+	/*
 	if (isWhosTurn == true && map.checkKingToBeKilled(true)) { gotoxy(40, 6); showTextColor("紅方  被將軍", WD_RED_BG_BLACK); }
 	if (isWhosTurn == false && map.checkKingToBeKilled(false)){ gotoxy(40, 7); showTextColor("黑方  被將軍", WD_GRAY_BG_BLACK); }
+	*/
+	const int cols = 38;
+	const int lines = 22;
+	COORD bufferSize = { cols, lines };
+	COORD characterBufferSize = { cols, lines };
+	COORD characterPosition = { 0, 0 };
+	SMALL_RECT consoleWriteArea = { 64, 1, 64 + cols - 1, 1 + lines - 1 };
+	CHAR_INFO consoleBuffer[cols * lines];
+	SetConsoleScreenBufferSize(hConsole, bufferSize);
+
+	for (int y = 0; y < lines; ++y)
+		for (int x = 0; x < cols; ++x) {
+			consoleBuffer[x + cols * y].Attributes = DEFAULT_COLOR;
+			consoleBuffer[x + cols * y].Char.AsciiChar = gameInfoScreen[y][x];
+		}
+	for (int y = 2; y < 21; ++y) {
+		for (int x = 2; x < 36; ++x) {
+			if (y == 3) {   //  第3行
+				consoleBuffer[x + cols * y].Attributes = WD_OCEANBLUE_BG_BLACK;
+				if (x >= 18 && x <= 23) {
+					consoleBuffer[x + cols * y].Char.AsciiChar = string(isWhosTurn ? "紅色方" : "黑色方").at(x - 18);
+					consoleBuffer[x + cols * y].Attributes = isWhosTurn ? WD_RED_BG_BLACK : WD_GRAY_BG_BLACK;
+				}
+			}
+			else if (y == 6 && ch != nullptr) {  //第5行
+				consoleBuffer[x + cols * y].Attributes = WD_OCEANBLUE_BG_BLACK;
+				if (x >= 12 && x <= 23) {
+					consoleBuffer[x + cols * y].Char.AsciiChar = string(string("您選擇了  ") + string(ch->getName())).at(x - 12);
+					if (x == 22 || x == 23)
+						consoleBuffer[x + cols * y].Attributes = isWhosTurn ? WD_RED_BG_BLACK : WD_GRAY_BG_BLACK;
+				}
+			}
+			else if (y == 9 && (map.checkKingToBeKilled(true) || map.checkKingToBeKilled(false))) {   //  第7行
+				if ((isWhosTurn && map.checkKingToBeKilled(true)) || ((!isWhosTurn) && map.checkKingToBeKilled(false))) {
+					consoleBuffer[x + cols * 8].Attributes = 64;
+					consoleBuffer[x + cols * 9].Attributes = 64;
+					consoleBuffer[x + cols * 10].Attributes = 64;
+				}
+				if (x >= 9 && x <= 28) {
+					consoleBuffer[x + cols * y].Attributes = DEFAULT_COLOR;
+					if (isWhosTurn && map.checkKingToBeKilled(true))
+						consoleBuffer[x + cols * y].Char.AsciiChar = string("！  紅方  被將軍  ！").at(x - 9);
+					else if ((!isWhosTurn) && map.checkKingToBeKilled(false))
+						consoleBuffer[x + cols * y].Char.AsciiChar = string("！  黑方  被將軍  ！").at(x - 9);
+					if (x >= 13 && x <= 16)
+						consoleBuffer[x + cols * y].Attributes = isWhosTurn ? WD_RED_BG_BLACK : WD_GRAY_BG_BLACK;
+				}
+			}
+		}
+	}
+
+	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 }
 
 bool GUI::showConfirm(const string& info)
@@ -161,13 +203,13 @@ bool GUI::showConfirm(const string& info)
 
 void GUI::displayWhatChessYouChose(const Chess& youChose)
 {
-	gotoxy(40, 4);
+	/*gotoxy(40, 4);
 	showTextColor("您選擇了  ", WD_OCEANBLUE_BG_BLACK);
 	if (youChose.getColor() == true)
 		showTextColor(youChose.getName(), WD_RED_BG_BLACK);
 	else
 		showTextColor(youChose.getName(), WD_GRAY_BG_BLACK);
-	gotoxy(CHESS_BOARD_X + youChose.getPos().X * 4 + 1, CHESS_BOARD_Y + youChose.getPos().Y * 2 + 1);
+	gotoxy(CHESS_BOARD_X + youChose.getPos().X * 4 + 1, CHESS_BOARD_Y + youChose.getPos().Y * 2 + 1);*/
 }
 
 void GUI::clearWhatChessYouChose()
@@ -176,30 +218,32 @@ void GUI::clearWhatChessYouChose()
 	cout << "\t\t";
 }
 
-void GUI::displayBattleSituation(Map& map)
+void GUI::displayBattleSituation(const Map& map)
 {
-	/* A COORD struct for specificying the console's screen buffer dimensions */
-	COORD bufferSize = { 34, 17 };// col = 34, lines = 16
-
-	/* Setting up different variables for passing to WriteConsoleOutput */
-	COORD characterBufferSize = { 34, 17 };
+	const int cols = 26;
+	const int lines = BATTLE_SITUATION_LINES + 2;
+	COORD bufferSize = { cols, lines };// col = 26, lines = 16
+	COORD characterBufferSize = { cols, lines };
 	COORD characterPosition = { 0, 0 };
-	SMALL_RECT consoleWriteArea = { 70, 1, (70 + 34) - 1, (1 + 17) - 1 };
-
-	/* A CHAR_INFO structure containing data about a single character */
-	CHAR_INFO consoleBuffer[34 * 17];
-
-	/* Set the screen's buffer size */
+	SMALL_RECT consoleWriteArea = { 2, 1, (78 + cols) - 1, (1 + lines) - 1 };
+	CHAR_INFO consoleBuffer[cols * lines];
 	SetConsoleScreenBufferSize(hConsole, bufferSize);
-
-	for (int y = 0; y < 17; ++y)
-		for (int x = 0; x < 34; ++x) {
-			consoleBuffer[y * 34 + x].Char.AsciiChar = '\0';
-			consoleBuffer[y * 34 + x].Attributes = DEFAULT_COLOR;
+	string wall = "║";
+	for (int y = 0; y < lines; ++y)
+		for (int x = 0; x < cols; ++x) {
+			consoleBuffer[y * cols + x].Char.AsciiChar = '\0';
+			consoleBuffer[y * cols + x].Attributes = DEFAULT_COLOR;
+			if (x == 0 || x == (cols-2)) {
+				consoleBuffer[y * cols + x].Char.AsciiChar = wall.at(0);
+				consoleBuffer[y * cols + x + 1].Char.AsciiChar = wall.at(1);
+				consoleBuffer[y * cols + x + 1].Attributes = DEFAULT_COLOR;
+				x++;
+			}
 		}
 
-	string title = "------戰  況  顯  示------";
-	for (int x = 0; x < 34; ++x) {
+	string title = "╔══戰  況  顯  示══╗";
+	string bottom = "╚═══════════╝";
+	for (int x = 0; x < cols; ++x) {
 		if (title[x] == '\0')break;
 		consoleBuffer[x].Char.AsciiChar = title.at(x);
 	}
@@ -207,87 +251,95 @@ void GUI::displayBattleSituation(Map& map)
 	const std::string ArabicNum[9] = { "１", "２", "３", "４", "５", "６", "７", "８", "９" };
 	int counter = 1;
 	bool straight = false;
-	std::vector<chessStorage>::iterator it = map.chessStoragePointer()->begin();
-	if (map.chessStoragePointer()->size() > BATTLE_SITUATION_LINES) {
-		counter += map.chessStoragePointer()->size() - BATTLE_SITUATION_LINES;
-		it += map.chessStoragePointer()->size() - BATTLE_SITUATION_LINES;
+	int i = 0;
+	const std::vector<chessStorage> *it = (map.chessStoragePointerConst());
+	if (it->size() > BATTLE_SITUATION_LINES) {
+		counter += it->size() - BATTLE_SITUATION_LINES;
+		i += it->size() - BATTLE_SITUATION_LINES;
 	}
 	string line;
 	int printer = 1;
-	for (; it != map.chessStoragePointer()->end(); it++) {
+	for (; i != map.chessStoragePointerConst()->size(); i++) {
 		straight = false;
-		bool color = it->moved->getColor();
-		line += ((counter >= 10) ? " " : "  ") + std::to_string(counter);
+		bool color = it->at(i).moved->getColor();
+		if (counter >= 100)line += " ";
+		else if (counter >= 10)line += "  ";
+		else if (counter < 10)line += "   ";
+		line += std::to_string(counter);
 		line += (color ? " 紅：" : " 黑：");
-		line += (*it).moved->getName() + " ";
-		line += (color ? ChineseNum[(8 - (*it).prePos.X)] : ArabicNum[((*it).prePos.X)]);
-		if ((color ? ((*it).prePos.Y - (*it).Pos.Y) : ((*it).Pos.Y - (*it).prePos.Y)) > 0) {
+		line += it->at(i).moved->getName() + " ";
+		line += (color ? ChineseNum[(8 - it->at(i).prePos.X)] : ArabicNum[(it->at(i).prePos.X)]);
+		if ((color ? (it->at(i).prePos.Y - it->at(i).Pos.Y) : (it->at(i).Pos.Y - it->at(i).prePos.Y)) > 0) {
 			line += " 進 ";
-			if (((*it).prePos.X - (*it).Pos.X) == 0) {
-				line += (color ? (ChineseNum[((*it).prePos.Y - (*it).Pos.Y) - 1]) : (ArabicNum[((*it).Pos.Y - (*it).prePos.Y) - 1]));
+			if ((it->at(i).prePos.X - it->at(i).Pos.X) == 0) {
+				line += (color ? (ChineseNum[(it->at(i).prePos.Y - it->at(i).Pos.Y) - 1]) : (ArabicNum[(it->at(i).Pos.Y - it->at(i).prePos.Y) - 1]));
 				straight = true;
 			}
 		}
-		else if ((color ? ((*it).Pos.Y - (*it).prePos.Y) : -((*it).prePos.Y - (*it).Pos.Y)) == 0)
+		else if ((color ? (it->at(i).Pos.Y - it->at(i).prePos.Y) : -(it->at(i).prePos.Y - it->at(i).Pos.Y)) == 0)
 			line += " 平 ";
 		else {
 			line += " 退 ";
-			if (((*it).prePos.X - (*it).Pos.X) == 0) {
-				line += (color ? (ChineseNum[((*it).Pos.Y - (*it).prePos.Y) - 1]) : (ArabicNum[((*it).prePos.Y - (*it).Pos.Y) - 1]));
+			if ((it->at(i).prePos.X - it->at(i).Pos.X) == 0) {
+				line += (color ? (ChineseNum[(it->at(i).Pos.Y - it->at(i).prePos.Y) - 1]) : (ArabicNum[(it->at(i).prePos.Y - it->at(i).Pos.Y) - 1]));
 				straight = true;
 			}
 		}
 		if (!straight)
-			line += (color ? (ChineseNum[(8 - (*it).Pos.X)]) : (ArabicNum[((*it).Pos.X)]));
-		for (int x = 0; x < 34; ++x) {
+			line += (color ? (ChineseNum[(8 - it->at(i).Pos.X)]) : (ArabicNum[(it->at(i).Pos.X)]));
+		for (int x = 0; x < 26; ++x) {
 			if (x == (line.size()))break;
-			consoleBuffer[34 * printer + x].Char.AsciiChar = line.at(x);
+			consoleBuffer[26 * printer + x + 2].Char.AsciiChar = line.at(x);
 		}
-		consoleBuffer[34 * printer + 4].Attributes = (color ? WD_RED_BG_BLACK : WD_GRAY_BG_BLACK);
-		consoleBuffer[34 * printer + 5].Attributes = (color ? WD_RED_BG_BLACK : WD_GRAY_BG_BLACK);
+		consoleBuffer[26 * printer + 7].Attributes = (color ? WD_RED_BG_BLACK : WD_GRAY_BG_BLACK);
+		consoleBuffer[26 * printer + 8].Attributes = (color ? WD_RED_BG_BLACK : WD_GRAY_BG_BLACK);
 		printer++;
 		line.clear();
 		counter++;
+	}
+	for (int x = 0; x < cols; ++x) {
+		if (title[x] == '\0')break;
+		consoleBuffer[21*cols+x].Char.AsciiChar = bottom.at(x);
 	}
 	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 }
 
 void GUI::displayExitScreen()
 {
-
-	/* A COORD struct for specificying the console's screen buffer dimensions */
-	COORD bufferSize = { WINDOW_COLS, WINDOW_LINES };
-
-	/* Setting up different variables for passing to WriteConsoleOutput */
-	COORD characterBufferSize = { WINDOW_COLS, WINDOW_LINES };
-	COORD characterPosition = { 0, 0 };
-	SMALL_RECT consoleWriteArea = { 0, 0, WINDOW_COLS - 1, WINDOW_LINES - 1 };
-
-	/* A CHAR_INFO structure containing data about a single character */
-	CHAR_INFO consoleBuffer[WINDOW_COLS * WINDOW_LINES];
-
-	/* Set the screen's buffer size */
-	SetConsoleScreenBufferSize(hConsole, bufferSize);
-
-	for (int y = 0; y < WINDOW_LINES; ++y) {
-		for (int x = 0; x < WINDOW_COLS; ++x) {
-			consoleBuffer[x + WINDOW_COLS * y].Char.AsciiChar = ' ';
-			consoleBuffer[x + WINDOW_COLS * y].Attributes = 7;
+	HWND hwnd = GetConsoleWindow();
+	WINDOWINFO rr;
+	GetWindowInfo(hwnd, &rr);
+	COORD window{ rr.rcClient.right - rr.rcClient.left, rr.rcClient.bottom - rr.rcClient.top };
+	HDC hdc = GetDC(hwnd);
+	HDC memhdc = CreateCompatibleDC(hdc);
+	HBITMAP cross = CreateCompatibleBitmap(hdc, window.X, window.Y);//106*8,24*16
+	SelectObject(memhdc, cross);
+	int x1 = 0;
+	int y1 = 0;
+	int x2 = window.X;
+	int y2 = window.Y;
+	int speed = 6;
+	int density = 4;
+	int color = 200;
+	while (1) {
+		DeleteObject(cross);
+		cross = CreateCompatibleBitmap(hdc, window.X, window.Y);
+		SelectObject(memhdc, cross);
+		int y = 200;
+		for (int x = x1; x < x2; x += density) {
+			for (int y = y1; y < y2; y += density) {
+				color = rand() % 256 + y1;
+				
+				if (color>255)color = 255;
+				SetPixel(memhdc, x, y, RGB(color, color, color));
+			}
 		}
+		x1 += 2 * speed, y1 += speed, x2 -= 2 * speed, y2 -= speed;
+		BitBlt(hdc, 0, 0, window.X, window.Y, memhdc, 0, 0, SRCCOPY);
+		if (x1 > (window.X / 2))break;
+		else if (x1 > (window.X / 4)){ density = 2; }
+		else if (x1 > (window.X / 3)){ density = 1; }
 	}
-
-	for (int y = 2; y < WINDOW_LINES; ++y) {
-		for (int x = 4; x < WINDOW_COLS; ++x) {
-			if (exitScreen[y - 2][x - 4] == '\0')
-				break;
-			consoleBuffer[x + WINDOW_COLS * y].Char.AsciiChar = exitScreen[y - 2][x - 4];
-			consoleBuffer[x + WINDOW_COLS * y].Attributes = 7;
-		}
-		if (y == 15)break;
-	}
-
-	/* Write our character buffer (a single character currently) to the console buffer */
-	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 }
 
 short GUI::mainMenu()
@@ -319,8 +371,8 @@ short GUI::mainMenu()
 			}}
 			for (int y = 13; y <= 21; ++y) {
 				if (y % 2 == 0)continue;
-				for (int x = 54; x <= 61; ++x) {
-					consoleBuffer[x + WINDOW_COLS * y].Char.AsciiChar = options[(y - 13) / 2][x - 54];
+				for (int x = 53; x <= 60; ++x) {
+					consoleBuffer[x + WINDOW_COLS * y].Char.AsciiChar = options[(y - 13) / 2][x - 53];
 					consoleBuffer[x + WINDOW_COLS * y].Attributes = 7;
 					if (((y - 13) / 2) + 1 == option)
 						consoleBuffer[x + WINDOW_COLS * y].Attributes = 112;
@@ -336,7 +388,6 @@ short GUI::mainMenu()
 	bool stop = false;
 	static int option = 1;
 	int const optionsNum = 5;
-	char* options[optionsNum] = { "雙人遊戲", "電腦對戰", "設定難度", "　關於　", "退出遊戲" };
 	std::thread t1([&]() {
 		int color = 1, i = 0;
 		while (!stop) {
@@ -384,36 +435,27 @@ short GUI::mainMenu()
 
 short GUI::MenuInGame()
 {
-	/* A COORD struct for specificying the console's screen buffer dimensions */
-	COORD bufferSize = { 120, 34 };
-
-	/* Setting up different variables for passing to WriteConsoleOutput */
+	COORD bufferSize = { WINDOW_COLS, WINDOW_LINES };
 	COORD characterBufferSize = { WINDOW_COLS, WINDOW_LINES };
 	COORD characterPosition = { 0, 0 };
 	SMALL_RECT consoleWriteArea = { 0, 0, WINDOW_COLS - 1, WINDOW_LINES - 1 };
-
-	/* A CHAR_INFO structure containing data about a single character */
 	CHAR_INFO consoleBuffer[WINDOW_COLS * WINDOW_LINES];
-
-	/* Set the screen's buffer size */
 	SetConsoleScreenBufferSize(hConsole, bufferSize);
-
-	/* Write our character buffer (a single character currently) to the console buffer */
 	ReadConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 	bool decided = false;
 	short option = 1;
-	gotoxy(MID_X - 7, MID_Y - 1);
-	cout << "=============="; gotoxy(MID_X - 7, MID_Y);
-	cout << " ->繼續遊戲   "; gotoxy(MID_X - 7, MID_Y + 1);
-	cout << "              "; gotoxy(MID_X - 7, MID_Y + 2);
-	cout << "   重新開始   "; gotoxy(MID_X - 7, MID_Y + 3);
-	cout << "              "; gotoxy(MID_X - 7, MID_Y + 4);
-	cout << "   回主選單   "; gotoxy(MID_X - 7, MID_Y + 5);
-	cout << "              "; gotoxy(MID_X - 7, MID_Y + 6);
-	cout << "   離開遊戲   "; gotoxy(MID_X - 7, MID_Y + 7);
-	cout << "==============";
+	gotoxy(MID_X - 6, MID_Y - 5);
+	cout << "┌───────┐"; gotoxy(MID_X - 6, MID_Y - 4);
+	cout << "│   繼續遊戲   │"; gotoxy(MID_X - 6, MID_Y - 3);
+	cout << "│              │"; gotoxy(MID_X - 6, MID_Y - 2);
+	cout << "│  重新開始    │"; gotoxy(MID_X - 6, MID_Y - 1);
+	cout << "│              │"; gotoxy(MID_X - 6, MID_Y);
+	cout << "│  回主選單    │"; gotoxy(MID_X - 6, MID_Y + 1);
+	cout << "│              │"; gotoxy(MID_X - 6, MID_Y + 2);
+	cout << "│  離開遊戲    │"; gotoxy(MID_X - 6, MID_Y + 3);
+	cout << "╰───────╯";
 	CHAR Input;
-	gotoxy(MID_X - 4, MID_Y - 2 + option * 2);
+	gotoxy(MID_X - 1, MID_Y - 6 + option * 2);
 	while (!decided)
 	{
 		setVisible(false);
@@ -442,7 +484,7 @@ short GUI::MenuInGame()
 			break;
 		}
 		cout << "\b\b  ";
-		gotoxy(MID_X - 6, MID_Y - 2 + option * 2); cout << "->";
+		gotoxy(MID_X - 3, MID_Y - 6 + option * 2); cout << "->";
 	}
 	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 	return option;
@@ -495,4 +537,23 @@ void GUI::showAlert(const string info, const short time)
 	Sleep(time);
 	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 	setVisible(true);
+}
+
+void GUI::displayGameScreen(const Map& map, bool isWhosTurn, const string chessYouChoose)
+{
+	COORD bufferSize{ WINDOW_COLS, WINDOW_LINES };
+	COORD characterBufferSize{ WINDOW_COLS, WINDOW_LINES };
+	COORD characterPosition{ 0, 0 };
+	SMALL_RECT consoleWriteArea{ 0, 0, WINDOW_COLS - 1, WINDOW_LINES - 1 };
+	CHAR_INFO consoleBuffer[WINDOW_COLS * WINDOW_LINES];
+	SetConsoleScreenBufferSize(hConsole, bufferSize);
+	for (int y = 0; y < WINDOW_LINES; ++y) {
+		for (int x = 0; x < WINDOW_COLS; ++x) {
+			consoleBuffer[x + WINDOW_COLS * y].Char.AsciiChar = gameScreen[y][x];
+			consoleBuffer[x + WINDOW_COLS * y].Attributes = DEFAULT_COLOR;
+		}
+	}
+	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
+	displayChessboard(map);
+	displayBattleSituation(map);
 }
