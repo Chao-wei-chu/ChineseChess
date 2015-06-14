@@ -21,7 +21,7 @@ public:
 	string getName() const { return Name; }
 	bool getColor() const { return Color; }
 	COORD getPos() const { return Pos; }
-	virtual bool isValid(COORD moveP, const Map& map)const;                //走法是否合法
+	virtual bool isValid(COORD moveP, const Map& map) const;                //走法是否合法
 	bool isDeath();
 	std::vector<COORD>access;
 	std::vector<Chess*>enemy;

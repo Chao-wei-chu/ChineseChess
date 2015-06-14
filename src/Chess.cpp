@@ -38,17 +38,15 @@ bool Chess::isValid(COORD move, const Map& map) const
 /*******將*******/
 bool King::isValid(COORD moveP, const Map& map) const
 {
-	Chess *ch = map.pChess[moveP.X][moveP.Y];
-	if (ch != NULL&&getColor() == ch->getColor())
-		return false;
 	bool color = getColor();
+	Chess *ch = map.pChess[moveP.X][moveP.Y];
+	if (ch != NULL && color == ch->getColor())
+		return false;
+	
 	COORD path = ComXY(moveP.X - getPos().X, moveP.Y - getPos().Y);
 
 	if ((color ? 7 : 0) <= moveP.Y && moveP.Y <= (color ? 9 : 2) && moveP.X >= 3 && moveP.X <= 5 &&    //
-		((abs(path.X) == 1 && abs(path.Y) == 0) || (abs(path.Y) == 1 && abs(path.X) == 0)))            // > 一般移動
-	{                                                                                                  //
-		if (map.pChess[moveP.X][moveP.Y] != NULL && color == map.pChess[moveP.X][moveP.Y]->getColor()) //
-			return false;                                                                              //
+		((abs(path.X) == 1 && abs(path.Y) == 0) || (abs(path.Y) == 1 && abs(path.X) == 0))) {          // > 一般移動                                                                        //
 		return true;                                                                                   //
 	}                                                                                                  //
 
@@ -75,21 +73,14 @@ bool Chariot::isValid(COORD moveP, const Map& map) const
 		for (int i = (getPos().X > moveP.X ? moveP.X : getPos().X) + 1;i < (getPos().X > moveP.X ? getPos().X : moveP.X); i++)
 			if (map.pChess[i][moveP.Y] != NULL)
 				return false;
-		pass = true;
+		return true;
 	}
 	else if ((getPos().X == moveP.X) && (getPos().Y - moveP.Y) != 0) //上下前進
 	{
 		for (int i = (getPos().Y > moveP.Y ? moveP.Y : getPos().Y) + 1;i < (getPos().Y > moveP.Y ? getPos().Y : moveP.Y); i++)
 			if (map.pChess[moveP.X][i] != NULL)
 				return false;
-		pass = true;
-	}
-	if (pass) {
-		if (ch != NULL) {  //目標位置有棋子，且原始位置＆目標位置中間無其他棋子
-			if (getColor() == ch->getColor())
-				return false;  //同色　　return false
-		}
-			return true;
+		return true;
 	}
 	return false;
 }
@@ -219,21 +210,18 @@ bool Pawn::isValid(COORD moveP, const Map& map) const
 			}
 		return false;
 	}
-	else//black
-	{
-		if (getPos().Y >= 5)//已過河
-		{
+	else {//black
+		if (getPos().Y >= 5) {//已過河
 			if ((getPos().Y - moveP.Y == -1 && abs(getPos().X - moveP.X) == 0) ||
 				(abs(getPos().Y - moveP.Y) == 0 && abs(getPos().X - moveP.X) == 1))
 				return true;
 		}
 		else//未過河
-			if (getPos().Y - moveP.Y == -1 && abs(getPos().X - moveP.X) == 0)
-			{
+			if (getPos().Y - moveP.Y == -1 && abs(getPos().X - moveP.X) == 0) {
 				return true;
 			}
 		return false;
-		}
+	}
 }
 
 bool Chess::isDeath() {

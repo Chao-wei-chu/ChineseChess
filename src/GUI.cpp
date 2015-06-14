@@ -54,18 +54,11 @@ void GUI::setColor(INT color)
 
 void GUI::displayChessboard(const Map& map)
 {
-	/* A COORD struct for specificying the console's screen buffer dimensions */
 	COORD bufferSize = { 34, 21 };
-
-	/* Setting up different variables for passing to WriteConsoleOutput */
 	COORD characterBufferSize = { 34, 21 };
 	COORD characterPosition = { 0, 0 };
 	SMALL_RECT consoleWriteArea = { CHESS_BOARD_X, CHESS_BOARD_Y, CHESS_BOARD_X + 34 - 1, CHESS_BOARD_Y + 21 - 1 };
-
-	/* A CHAR_INFO structure containing data about a single character */
 	CHAR_INFO consoleBuffer[34 * 21];
-
-	/* Set the screen's buffer size */
 	SetConsoleScreenBufferSize(hConsole, bufferSize);
 
 	for (int y = 0; y < (21); ++y) {
@@ -329,6 +322,7 @@ void GUI::displayExitScreen()
 
 short GUI::mainMenu()
 {
+	PlaySound("bgaudio.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);  //Play Sound;
 	system("cls");
 	class printMenu {
 	private:
@@ -336,7 +330,6 @@ short GUI::mainMenu()
 		COORD characterBufferSize;
 		COORD characterPosition;
 		SMALL_RECT consoleWriteArea;
-		//CHAR_INFO *consoleBuffer;
 		CHAR_INFO *consoleBuffer;
 	public:
 		printMenu() {
@@ -383,7 +376,7 @@ short GUI::mainMenu()
 			Sleep(150);
 		}
 	});
-	std::thread t2([&]() {
+	//std::thread t2([&]() {
 		setVisible(false);
 		CHAR Input;
 		bool end = false;
@@ -411,10 +404,10 @@ short GUI::mainMenu()
 				break;
 			}
 		}
-	});
+	//});
 	t1.join();
-	t2.join();
-	PlaySound(NULL, NULL, NULL);
+	//t2.join();
+	//PlaySound(NULL, NULL, NULL);
 	return option;
 }
 
@@ -482,38 +475,52 @@ short GUI::MenuInGame()
 	return option;
 }
 
-void GUI::displayPossiblePath(Chess* ch, Map& map)
+void GUI::displayPossiblePath(Chess* ch, const Map& map)
 {
-	displayChessboard(map);
+	COORD bufferSize = { 34, 21 };
+	COORD characterBufferSize = { 34, 21 };
+	COORD characterPosition = { 0, 0 };
+	SMALL_RECT consoleWriteArea = { CHESS_BOARD_X, CHESS_BOARD_Y, CHESS_BOARD_X + 34 - 1, CHESS_BOARD_Y + 21 - 1 };
+	CHAR_INFO consoleBuffer[34 * 21];
+	SetConsoleScreenBufferSize(hConsole, bufferSize);
+	for (int y = 0; y < (21); ++y) {
+		for (int x = 0; x < 34; ++x) {
+			consoleBuffer[x + 34 * y].Attributes = ((y == 0 || y == 20) ? WD_Purple_BG_WHITE : WD_BLACK_BG_WHITE);
+			consoleBuffer[x + 34 * y].Char.AsciiChar = ChessScreenChar[y][x];
+		}
+	}
+	for (int x = 0; x < ROW_SIZE; x++)
+		for (int y = 0; y < COLUMN_SIZE; y++)
+			if (map.pChess[x][y] != NULL) {
+				consoleBuffer[(x * 4) + 34 * (y * 2 + 1)].Attributes = ((map.pChess[x][y]->getColor() == true) ? CHESS_RED : CHESS_BLACK);
+				consoleBuffer[(x * 4) + 34 * (y * 2 + 1) + 1].Attributes = ((map.pChess[x][y]->getColor() == true) ? CHESS_RED : CHESS_BLACK);
+				consoleBuffer[(x * 4) + 34 * (y * 2 + 1)].Char.AsciiChar = map.pChess[x][y]->getName().at(0);
+				consoleBuffer[(x * 4) + 34 * (y * 2 + 1) + 1].Char.AsciiChar = map.pChess[x][y]->getName().at(1);
+			}
 	for (unsigned int i = 0; i < ch->access.size(); i++)
 	{
-		gotoxy(CHESS_BOARD_X + ch->access.at(i).X * 4, CHESS_BOARD_Y + ch->access.at(i).Y * 2 + 1); //
-		if (map.pChess[ch->access.at(i).X][ch->access.at(i).Y] != NULL)
-		{
-			showTextColor(map.pChess[ch->access.at(i).X][ch->access.at(i).Y]->getName(), map.pChess[ch->access.at(i).X][ch->access.at(i).Y]->getColor() ? 60 : 48);
+		int x = ch->access.at(i).X;
+		int y = ch->access.at(i).Y;
+		Chess *tempch = map.pChess[ch->access.at(i).X][ch->access.at(i).Y];
+		consoleBuffer[(x * 4) + 34 * (y * 2 + 1)].Attributes = (tempch == NULL ? 120 : (tempch->getColor() ? 60 : 48));
+		consoleBuffer[(x * 4) + 34 * (y * 2 + 1) + 1].Attributes = (tempch == NULL ? 120 : (tempch->getColor() ? 60 : 48));
+		if (tempch != NULL) {
+			consoleBuffer[(x * 4) + 34 * (y * 2 + 1)].Char.AsciiChar = tempch->getName().at(0);
+			consoleBuffer[(x * 4) + 34 * (y * 2 + 1) + 1].Char.AsciiChar = tempch->getName().at(1);
 		}
-		else
-			showTextColor(ChessScreen[ch->access.at(i).Y * 2][ch->access.at(i).X * 2], 120);
 	}
+	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 }
 
 void GUI::showAlert(const string info, const short time)
 {
-	/* A COORD struct for specificying the console's screen buffer dimensions */
 	COORD bufferSize = { WINDOW_COLS, WINDOW_LINES };
-
-	/* Setting up different variables for passing to WriteConsoleOutput */
 	COORD characterBufferSize = { WINDOW_COLS, WINDOW_LINES };
 	COORD characterPosition = { 0, 0 };
 	SMALL_RECT consoleWriteArea = { 0, 0, WINDOW_COLS - 1, WINDOW_LINES - 1 };
-
-	/* A CHAR_INFO structure containing data about a single character */
 	CHAR_INFO consoleBuffer[WINDOW_COLS * WINDOW_LINES];
-
-	/* Set the screen's buffer size */
 	SetConsoleScreenBufferSize(hConsole, bufferSize);
 
-	/* Write our character buffer (a single character currently) to the console buffer */
 	ReadConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
 	setVisible(false);
 	setColor(12);
@@ -550,4 +557,51 @@ void GUI::displayGameScreen(const Map& map, bool isWhosTurn, const Chess* ch)
 	displayChessboard(map);
 	displayBattleSituation(map);
 	displayGameInfo(isWhosTurn, map, ch);
+}
+
+void GUI::displayAboutScreen()
+{
+	COORD bufferSize{ WINDOW_COLS, WINDOW_LINES };
+	COORD characterBufferSize{ WINDOW_COLS, WINDOW_LINES };
+	COORD characterPosition{ 0, 0 };
+	SMALL_RECT consoleWriteArea{ 0, 0, WINDOW_COLS - 1, WINDOW_LINES - 1 };
+	CHAR_INFO consoleBuffer[WINDOW_COLS * WINDOW_LINES];
+	SetConsoleScreenBufferSize(hConsole, bufferSize);
+	for (int y = 0; y < WINDOW_LINES; ++y) {
+		for (int x = 0; x < WINDOW_COLS; ++x) {
+			consoleBuffer[x + WINDOW_COLS * y].Char.AsciiChar = aboutScreen[y][x];
+			consoleBuffer[x + WINDOW_COLS * y].Attributes = DEFAULT_COLOR;
+		}
+	}
+	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
+	_getch();
+}
+
+int GUI::showDepthInput()
+{
+	int depth;
+	COORD bufferSize = { WINDOW_COLS, WINDOW_LINES };
+	COORD characterBufferSize = { WINDOW_COLS, WINDOW_LINES };
+	COORD characterPosition = { 0, 0 };
+	SMALL_RECT consoleWriteArea = { 0, 0, WINDOW_COLS - 1, WINDOW_LINES - 1 };
+	CHAR_INFO consoleBuffer[WINDOW_COLS * WINDOW_LINES];
+	SetConsoleScreenBufferSize(hConsole, bufferSize);
+
+	ReadConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
+	setVisible(true);
+	setColor(12);
+	gotoxy(MID_X - 10, MID_Y - 3);
+	cout << "שÝשששששששששששששששששששששששß"; gotoxy(MID_X - 10, MID_Y - 2);
+	cout << "שר                      שר"; gotoxy(MID_X - 10, MID_Y - 1);
+	cout << "שר                      שר"; gotoxy(MID_X - 10, MID_Y);
+	cout << "שר"; showTextColor(" ½׀¿י₪J¹q¸£ֳר«׳ (1~9) ", DEFAULT_COLOR); setColor(12); cout << "שר"; gotoxy(MID_X - 10, MID_Y + 1);
+	cout << "שר                      שר"; gotoxy(MID_X - 10, MID_Y + 2);
+	cout << "שר                      שר"; gotoxy(MID_X - 10, MID_Y + 3);
+	cout << "שר                      שר"; gotoxy(MID_X - 10, MID_Y + 4);
+	cout << "שדשששששששששששששששששששששששו";
+	setColor(DEFAULT_COLOR);
+	gotoxy(MID_X - 5, MID_Y + 2);
+	depth = _getch();
+	WriteConsoleOutputA(hConsole, consoleBuffer, characterBufferSize, characterPosition, &consoleWriteArea);
+	return depth - '0';
 }

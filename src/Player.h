@@ -2,6 +2,8 @@
 #define PLAYER_H
 #include "Map.h"
 #include "GUI.h"
+#include "XQWLight.h"
+using namespace XQWLight;
 class Player
 {
 public:

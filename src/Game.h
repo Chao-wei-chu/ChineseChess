@@ -5,6 +5,7 @@
 #include <string>
 #include "Map.h"
 #include "GUI.h"
+#include "XQWLight.h"
 #include <conio.h>   // _getch()
 
 COORD ComXY(SHORT x, SHORT y);    //±Nx, yÂà¦¨ sturctor COORD

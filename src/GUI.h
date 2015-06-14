@@ -5,6 +5,7 @@
 #include <iomanip> //setw()
 #include <thread>
 #include "Map.h"
+#pragma comment(lib, "winmm.lib")  //PlaySound
 using std::cout;
 using std::string;
 
@@ -155,6 +156,30 @@ const char gameInfoScreen[22][39] = {  //22*38
 	"║      ←  →  方向鍵控制游標      ║",
 	"║        ↓                        ║",
 	"╚═════════════════╝" };
+const char aboutScreen[WINDOW_LINES][WINDOW_COLS + 1] = {
+	"　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　本遊戲為　１０３－２　程式設計ＡＡ期末專題　第三組　之專題成果　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　第三組　成員：　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　組長　陳冠羽　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　組員　袁艾文　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　張岱　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　林福廷　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　曾翊華　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　李至曜　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　指導助教　莊正陽　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　",
+	"　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　" };
 class GUI {
 public:
 	GUI();
@@ -169,10 +194,12 @@ public:
 	void displayGameInfo(bool,const Map&, const Chess *ch = nullptr);
 	void displayBattleSituation(const Map& map);
 	//--------------------
-	void displayPossiblePath(Chess* ch, Map& map);
+	void displayPossiblePath(Chess* ch, const Map& map);
 	bool showConfirm(const string&);          //<==請填剛好22半形字元
 	void showAlert(const string, const short);//<==請填剛好22半形字元
+	int showDepthInput();
 	void displayExitScreen();
+	void displayAboutScreen();
 	void gotoxy(COORD);
 	void gotoxy(short, short);
 	void showTextColor(string, SHORT);

@@ -5,6 +5,10 @@ Player::Player(bool icolor) :color(icolor){}
 
 SHORT Player::move(COORD cursorP, COORD movePos, Map& map)
 {
+	if (map.pChess[cursorP.X][cursorP.Y] == NULL)
+		system("pause"); // BUG  想走的棋子位置是空的
+	if (map.pChess[cursorP.X][cursorP.Y]->getColor() != color)
+		system("pause"); // BUG  動對方的棋子
 	chessStorage tempStorage; //悔棋還原功能的struct暫存
 	bool Valid = false;
 
@@ -13,7 +17,6 @@ SHORT Player::move(COORD cursorP, COORD movePos, Map& map)
 		if (map.pChess[cursorP.X][cursorP.Y]->access.at(i) == movePos)        // >在access 中確定此路徑可行
 			Valid = true;                                                     //
 	}                                                                         //               
-
 	if (map.pChess[movePos.X][movePos.Y] != NULL)
 	{
 		if (map.pChess[movePos.X][movePos.Y]->getColor() == map.pChess[cursorP.X][cursorP.Y]->getColor())//change the chess you chose !

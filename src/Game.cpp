@@ -4,12 +4,15 @@
 #include "Player.h"
 
 using std::cout;
+using namespace XQWLight;
 
 Game::Game()
 {
 	isWhosTurn = true;
 	cursorPos = ComXY(0, 0);
 	gamemode = 1;
+	init_engine(5);   //XQ
+	init_game();      //XQ
 }
 
 bool operator ==(const COORD& a, const COORD& b)
@@ -63,7 +66,18 @@ void Game::start()
 
 void Game::setting()   //設定電腦難易度  可以不要
 {
-
+	int depth;
+	depth = gui.showDepthInput();
+	if (depth <= 0 || depth > 20) {
+		gui.showAlert("  請輸入１～９的數字  ", 2000);
+		depth = gui.showDepthInput();
+	}
+	string out;
+	out += "   已設定難度為   ";
+	out += (depth + '0');
+	out += "   ";
+	gui.showAlert(out, 2000);
+	init_engine(depth * 2);
 }
 void Game::Interface() //開始介面
 {
@@ -72,18 +86,19 @@ void Game::Interface() //開始介面
 		switch (gui.mainMenu()) {
 		case 1:
 			gamemode = 0;
+			PlaySound(NULL, NULL, NULL);
 			start();
 			break;
 		case 2:
 			gamemode = 1;
+			PlaySound(NULL, NULL, NULL);
 			start();
 			break;
 		case 3:
-			//setting();
-			gui.showAlert("        建置中        ", 1000);
+			setting();
 			break;
 		case 4:
-			gui.showAlert("        建置中        ", 1000);
+			gui.displayAboutScreen();
 			break;
 		case 5:
 			exitGame();
@@ -109,6 +124,7 @@ void Game::playerControl()
 	isWhosTurn = true;      //Red 先開始
 	bool isMoveSuccess = false;
 	bool reChoose = false;
+	bool go = true;  //control possible path
 	makeAccess(GameMap);
 	gui.gotoxy(CHESS_BOARD_X + cursorPos.X * 4, CHESS_BOARD_Y + cursorPos.Y * 2 + 1);
 	gui.displayGameScreen(GameMap, isWhosTurn);
@@ -141,38 +157,40 @@ void Game::playerControl()
 				bool color = GameMap.pChess[cursorPos.X][cursorPos.Y]->getColor();
 				if (color != isWhosTurn)break;
 				gui.displayGameInfo(isWhosTurn, GameMap, GameMap.pChess[cursorPos.X][cursorPos.Y]);
+
 				gui.displayPossiblePath(GameMap.pChess[cursorPos.X][cursorPos.Y], GameMap); //顯示可以走的位置
+
 				gui.gotoxy(CHESS_BOARD_X + cursorPos.X * 4, CHESS_BOARD_Y + cursorPos.Y * 2 + 1);
+				COORD originalPos = cursorPos;
 				cursorPos = (color ? rPlayer : bPlayer).chooseMovePos(ComXY(cursorPos.X, cursorPos.Y), GameMap, isMoveSuccess, reChoose, gui);
+				
 				if (reChoose) {
 					gui.displayChessboard(GameMap);
 					gui.displayGameInfo(isWhosTurn, GameMap);
 				}
 				if (!isMoveSuccess)
 					continue;
-
+				//---------------------------------------------------------
+				//if (color == true) {
+					string in;
+					in += ((originalPos.X + '0'));
+					in += ((originalPos.Y + '0'));
+					in += ((cursorPos.X + '0'));
+					in += ((cursorPos.Y + '0'));
+					on_human_move(in);
+				//}
+				//--------------------------------------------------------------
 				GameMap.chessStorageForRestorePointer()->clear();
 				gui.displayChessboard(GameMap);
 				gui.displayGameInfo(isWhosTurn, GameMap);
-				if (gamemode == 0)
-					isWhosTurn = !isWhosTurn;         //交換出棋方
-				else {
-					std::vector<Chess *> temp;
-					for (int x = 0; x < ROW_SIZE; x++)
-						for (int y = 0; y < COLUMN_SIZE; y++) {
-							if (GameMap.pChess[x][y] != NULL && GameMap.pChess[x][y]->getColor() == false && GameMap.pChess[x][y]->access.size() > 0) {
-								temp.push_back(GameMap.pChess[x][y]);
-							}
-						}
-					Chess *ch = temp.at((unsigned int)rand() % temp.size());
-					bPlayer.move(ch->getPos(), ch->access.at(rand()%ch->access.size()), GameMap); //FUCKING IDIOT AI
-					gui.displayChessboard(GameMap);
-				}
+
+				isWhosTurn = !isWhosTurn;         //交換出棋方
 				makeAccess(GameMap);
+
 				gui.displayBattleSituation(GameMap);
 				gui.displayGameInfo(isWhosTurn, GameMap);
-				if (GameMap.bKingPointer()->isDeath()) { gui.showAlert("       紅方勝利       ", 5000); return; }
-				if (GameMap.rKingPointer()->isDeath()){ gui.showAlert("       黑方勝利       ", 5000); return; }
+				if (GameMap.bKingPointer()->isDeath()) { Sleep(1000); gui.showAlert("       紅方勝利       ", 5000); return; }
+				if (GameMap.rKingPointer()->isDeath()){ Sleep(1000); gui.showAlert("       黑方勝利       ", 5000); return; }
 			}
 			break;
 		case KB_ESC:
@@ -197,6 +215,10 @@ void Game::playerControl()
 			}
 			break;
 		case KB_44:   //悔棋
+			if (gamemode == 1) {
+				gui.showAlert(" 電腦不想給你悔棋ㄏㄏ ", 2000);
+				break;
+			}
 			if (gui.showConfirm("      確定悔棋 ?      "))
 			{
 				if (GameMap.regret())
@@ -209,6 +231,10 @@ void Game::playerControl()
 			}
 			break;
 		case KB_46:   //還原
+			if (gamemode == 1) {
+				gui.showAlert(" 電腦不想給你悔棋ㄏㄏ ", 2000);
+				break;
+			}
 			if (gui.showConfirm("      確定還原 ?      "))
 			{
 				if (GameMap.restore())
@@ -223,6 +249,23 @@ void Game::playerControl()
 		default:
 			break;
 		}
+		if (gamemode == 1 && isWhosTurn == false) {
+			if (GameMap.rKingPointer()->enemy.size() > 0) {
+				bPlayer.move(GameMap.rKingPointer()->enemy.at(0)->getPos(), GameMap.rKingPointer()->getPos(), GameMap);
+			}
+			else {
+				string out;
+				out = generate_move();
+				bPlayer.move(ComXY(out.at(0) - '0', out.at(1) - '0'), ComXY(out.at(2) - '0', out.at(3) - '0'), GameMap);
+			}
+			isWhosTurn = true;
+			makeAccess(GameMap);
+			gui.displayChessboard(GameMap);
+			gui.displayBattleSituation(GameMap);
+			gui.displayGameInfo(isWhosTurn, GameMap);
+			if (GameMap.bKingPointer()->isDeath()) { Sleep(1000); gui.showAlert("       紅方勝利       ", 5000); return; }
+			if (GameMap.rKingPointer()->isDeath()){ Sleep(1000); gui.showAlert("       黑方勝利       ", 5000); return; }
+		}
 		gui.gotoxy(CHESS_BOARD_X + cursorPos.X * 4, CHESS_BOARD_Y + cursorPos.Y * 2 + 1);//回到游標原本的位置
 		gui.setVisible(true);
 		InputKB = _getch();
@@ -231,6 +274,7 @@ void Game::playerControl()
 
 void Game::reset()
 {
+	init_game();
 	GameMap.reset();
 	isWhosTurn = true;
 	cursorPos = ComXY(0, 0);
