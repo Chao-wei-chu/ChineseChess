@@ -1,6 +1,7 @@
 #include "GUI.h"
 #include <Windows.h>
 #include <conio.h>
+#include <fstream>
 
 static CONSOLE_SCREEN_BUFFER_INFO srInfo;
 static const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -83,10 +84,6 @@ void GUI::displayChessboard(const Map& map)
 
 void GUI::displayGameInfo(bool isWhosTurn, const Map& map, const Chess *ch)
 {
-	/*
-	if (isWhosTurn == true && map.checkKingToBeKilled(true)) { gotoxy(40, 6); showTextColor("紅方  被將軍", WD_RED_BG_BLACK); }
-	if (isWhosTurn == false && map.checkKingToBeKilled(false)){ gotoxy(40, 7); showTextColor("黑方  被將軍", WD_GRAY_BG_BLACK); }
-	*/
 	const int cols = 38;
 	const int lines = 22;
 	COORD bufferSize = { cols, lines };
@@ -322,7 +319,14 @@ void GUI::displayExitScreen()
 
 short GUI::mainMenu()
 {
-	PlaySound("bgaudio.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);  //Play Sound;
+	//確定音訊檔有無在同一目錄下
+	std::ifstream audio;
+	audio.open("bgaudio.wav");
+	if (audio.is_open()) {
+		audio.close();
+		PlaySound("bgaudio.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);  //Play Sound;
+	}
+	
 	system("cls");
 	class printMenu {
 	private:
